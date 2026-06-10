@@ -1,17 +1,17 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include "gameworld.h"
 
 class Player
 {
 public:
     Player(int gridX, int gridY);
 
-    void moveRandomly();
-    void draw(sf::RenderWindow& window) const;
+    void moveRandomly(GameWorld& world);
+    void draw(GameWorld& world) const;
 
 private:
-    sf::RectangleShape shape;
     int x;
     int y;
 };

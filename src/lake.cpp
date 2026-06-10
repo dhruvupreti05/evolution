@@ -1,6 +1,7 @@
 #include "lake.h"
 
-Lake::Lake(int centerX,
+Lake::Lake(
+    int centerX,
     int centerY,
     int numWaterBlocks,
     int gridSize,
@@ -14,8 +15,7 @@ Lake::Lake(int centerX,
 
 void Lake::generateSandBoundary()
 {
-    std::vector<GridPos> directions = 
-    {
+    std::vector<GridPos> directions = {
         {1, 0},
         {-1, 0},
         {0, 1},
@@ -43,19 +43,34 @@ void Lake::generateSandBoundary()
     }
 }
 
-void Lake::draw(sf::RenderWindow& window) const
+void Lake::addToWorld(GameWorld& world) const
 {
     for (const auto& sand : sandCells)
     {
-        Block block(sand.x, sand.y, cellSize, sf::Color(194, 178, 128));
-
-        block.draw(window);
+        if (world.isInsideGrid(sand.x, sand.y))
+        {
+            world.setTile(sand.x, sand.y, TileType::Sand);
+        }
     }
 
     for (const auto& water : cells)
     {
-        Block block(water.x, water.y, cellSize, sf::Color::Blue);
+        if (world.isInsideGrid(water.x, water.y))
+        {
+            world.setTile(water.x, water.y, TileType::Water);
+        }
+    }
+}
 
-        block.draw(window);
+void Lake::draw(GameWorld& world) const
+{
+    for (const auto& sand : sandCells)
+    {
+        world.drawTile(sand.x, sand.y, TileType::Sand);
+    }
+
+    for (const auto& water : cells)
+    {
+        world.drawTile(water.x, water.y, TileType::Water);
     }
 }

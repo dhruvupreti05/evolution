@@ -1,10 +1,9 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
 #include <set>
 
 #include "clumps.h"
-#include "block.h"
+#include "gameworld.h"
 
 class Lake : public Clump
 {
@@ -17,7 +16,8 @@ public:
         int cellSize
     );
 
-    void draw(sf::RenderWindow& window) const;
+    void addToWorld(GameWorld& world) const;
+    void draw(GameWorld& world) const;
 
 private:
     int cellSize;
