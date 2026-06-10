@@ -1,24 +1,23 @@
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include <set>
-#include <utility>
 
-class Lake {
-public:
-    Lake(int gridX, int gridY, int width, int height, int numBlocks);
+#include "block.h"
+#include "clumps.h"
 
-    void generate();
-    void draw(sf::RenderWindow& window) const;
 
-private:
-    int gridX, gridY;
-    int width, height;
-    int numBlocks;
-    std::vector<sf::RectangleShape> blocks;
+class Lake : public Clump {
+    public:
+        Lake(int centerX, int centerY, int radius);
 
-    void generateClump();
-    void addBlock(int x, int y);
-    std::vector<std::pair<int, int> > getNeighbors(int x, int y) const;
+        void generate();
+        void draw(sf::RenderWindow& window) const;
 
-    std::set<std::pair<int, int> > clump;
+    private:
+        int centerX, centerY;
+        int radius;
+        std::set<Block> water;
+        std::set<Block> sand;
+
+        void generateLake();
+        void generateBoundary();
 };
