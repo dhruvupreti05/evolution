@@ -1,15 +1,13 @@
-#include <SFML/Graphics.hpp>
 #include "block.h"
 
-Block::Block(int x, int y, sf::Color color) : x(x), y(y), color(color)
+Block::Block(int gridX, int gridY, int size, sf::Color color) : gridX(gridX), gridY(gridY), size(size)
 {
-    size = 8;
-    block = new sf::RectangleShape(sf::Vector2f(size, size));
-    block.setFillColor(color);
-    block.setPosition((x - gridX) * size, (y - gridY) * size); 
+    shape.setSize(sf::Vector2f(size, size));
+    shape.setFillColor(color);
+    shape.setPosition(gridX * size, gridY * size);
 }
 
 void Block::draw(sf::RenderWindow& window) const
 {
-    window.draw(block);
+    window.draw(shape);
 }

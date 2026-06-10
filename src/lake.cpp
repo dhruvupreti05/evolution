@@ -1,34 +1,61 @@
 #include "lake.h"
-#include <cstdlib>
 
-Lake::Lake(int centerX, int centerY, int radius)
+Lake::Lake(int centerX,
+    int centerY,
+    int numWaterBlocks,
+    int gridSize,
+    int cellSize
+)
+    : Clump(centerX, centerY, numWaterBlocks, gridSize),
+      cellSize(cellSize)
 {
-    this.centerX = centerX;
-    this.centerY = centerY;
-    this.radius = radius;
-    generate();
+    generateSandBoundary();
 }
 
-void Lake::generate() 
+void Lake::generateSandBoundary()
 {
-    generateLake();
-    generateBoundary();
-}
-
-void Lake::generateLake() {
-    if (radius <= 0) return;
-
-    for (int iy = radius; iy >= -radius; iy--)
+    std::vector<GridPos> directions = 
     {
-        for (int ix = )
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1}
+    };
+
+    for (const auto& waterCell : cells)
+    {
+        for (const auto& dir : directions)
+        {
+            GridPos neighbor = {
+                waterCell.x + dir.x,
+                waterCell.y + dir.y
+            };
+
+            if (cells.count(neighbor) == 0)
+            {
+                sandCells.insert(neighbor);
+            }
+        }
+    }
+}
+
+void Lake::draw(sf::RenderWindow& window) const
+{
+    for (const auto& sand : sandCells)
+    {
+        Block block(sand.x, sand.y, cellSize, sf::Color(194, 178, 128));
+
+        block.draw(window);
     }
 
-}
-
-void Lake::draw(sf::RenderWindow& window) const 
-{
-    for (const auto& block : blocks) 
+    for (const auto& water : cells)
     {
-        window.draw(block);
+        Block block(water.x, water.y, cellSize, sf::Color::Blue);
+
+        block.draw(window);
     }
 }

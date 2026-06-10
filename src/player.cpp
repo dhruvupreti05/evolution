@@ -1,20 +1,31 @@
-#include "Player.h"
+#include "player.h"
 #include <cstdlib>
 
-Player::Player(int gridX, int gridY) 
+const int GRID_SIZE = 100;
+const int CELL_SIZE = 8;
+
+Player::Player(int gridX, int gridY)
 {
     x = gridX;
     y = gridY;
-    shape.setSize(sf::Vector2f(8, 8));  
+
+    shape.setSize(sf::Vector2f(CELL_SIZE, CELL_SIZE));
     shape.setFillColor(sf::Color::White);
-    shape.setPosition(x * 8, y * 8); 
+    shape.setPosition(x * CELL_SIZE, y * CELL_SIZE);
 }
 
-void Player::moveRandomly() 
+void Player::moveRandomly()
 {
     int dx = (rand() % 3) - 1;
     int dy = (rand() % 3) - 1;
-    x = (x + dx + 100) % 100;
-    y = (y + dy + 100) % 100;
-    shape.setPosition(x * 8, y * 8);
+
+    x = (x + dx + GRID_SIZE) % GRID_SIZE;
+    y = (y + dy + GRID_SIZE) % GRID_SIZE;
+
+    shape.setPosition(x * CELL_SIZE, y * CELL_SIZE);
+}
+
+void Player::draw(sf::RenderWindow& window) const
+{
+    window.draw(shape);
 }
