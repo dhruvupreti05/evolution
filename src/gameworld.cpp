@@ -1,4 +1,5 @@
 #include "gameworld.h"
+#include "config.h"
 
 GameWorld::GameWorld(
     int windowWidth,
@@ -28,7 +29,7 @@ bool GameWorld::pollEvent(sf::Event& event)
 
 void GameWorld::clear()
 {
-    window.clear(sf::Color(235, 220, 180));
+    window.clear(Config::COLOR_BACKGROUND);
 }
 
 void GameWorld::display()
@@ -81,23 +82,23 @@ sf::Color GameWorld::getColorFromTile(TileType type) const
     switch (type)
     {
         case TileType::Water:
-            return sf::Color::Blue;
+            return Config::COLOR_WATER;
 
         case TileType::Sand:
-            return sf::Color(194, 178, 128);
+            return Config::COLOR_SAND;
 
         case TileType::Tree:
-            return sf::Color(34, 139, 34);
+            return Config::COLOR_TREE;
 
         case TileType::Food:
-            return sf::Color::Red;
+            return Config::COLOR_FOOD;
 
         case TileType::Human:
-            return sf::Color::White;
+            return Config::COLOR_HUMAN;
 
         case TileType::Empty:
         default:
-            return sf::Color(235, 220, 180);
+            return Config::COLOR_BACKGROUND;
     }
 }
 
@@ -109,7 +110,6 @@ void GameWorld::drawTile(int x, int y, TileType type)
     }
 
     sf::RectangleShape square;
-
     square.setSize(sf::Vector2f(cellSize, cellSize));
     square.setPosition(x * cellSize, y * cellSize);
     square.setFillColor(getColorFromTile(type));

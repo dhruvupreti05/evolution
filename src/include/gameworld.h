@@ -2,19 +2,14 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <string>
 
 #include "tiletype.h"
 
 class GameWorld
 {
 public:
-    GameWorld(
-        int windowWidth,
-        int windowHeight,
-        int gridSize,
-        int cellSize,
-        const std::string& title
-    );
+    GameWorld(int windowWidth, int windowHeight, int gridSize, int cellSize, const std::string& title);
 
     bool isOpen() const;
     bool pollEvent(sf::Event& event);

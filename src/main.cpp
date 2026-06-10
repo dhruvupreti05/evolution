@@ -1,67 +1,27 @@
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include <cstdlib>
 #include <ctime>
 
+#include "config.h"
 #include "gameworld.h"
 #include "player.h"
 #include "lake.h"
-
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 800;
-const int GRID_SIZE = 100;
-const int CELL_SIZE = 8;
-
-const int NUM_PLAYERS = 10;
-const int NUM_LAKES = 3;
 
 int main()
 {
     srand(static_cast<unsigned>(time(nullptr)));
 
     GameWorld world(
-        WINDOW_WIDTH,
-        WINDOW_HEIGHT,
-        GRID_SIZE,
-        CELL_SIZE,
+        Config::WINDOW_WIDTH,
+        Config::WINDOW_HEIGHT,
+        Config::GRID_SIZE,
+        Config::CELL_SIZE,
         "Evolution Simulation"
     );
 
-    std::vector<Player> players;
-    std::vector<Lake> lakes;
+    Player::init(world);
+    Lake::init(world);
 
-    // Create players once
-    for (int i = 0; i < NUM_PLAYERS; ++i)
-    {
-        int gridX = rand() % GRID_SIZE;
-        int gridY = rand() % GRID_SIZE;
-
-        players.emplace_back(gridX, gridY);
-    }
-
-    // Create lakes once
-    for (int i = 0; i < NUM_LAKES; ++i)
-    {
-        int gridX = rand() % GRID_SIZE;
-        int gridY = rand() % GRID_SIZE;
-        int numWaterBlocks = rand() % 50 + 30;
-
-        lakes.emplace_back(
-            gridX,
-            gridY,
-            numWaterBlocks,
-            GRID_SIZE,
-            CELL_SIZE
-        );
-    }
-
-    // Write lakes into the world's TileType grid once
-    for (const auto& lake : lakes)
-    {
-        lake.addToWorld(world);
-    }
-
-    // Main game loop
     while (world.isOpen())
     {
         sf::Event event;
@@ -74,28 +34,16 @@ int main()
             }
         }
 
-        // Update players
-        for (auto& player : players)
-        {
-            player.moveRandomly(world);
-        }
+        Player::movePlayers(world);
 
-        // Draw everything
         world.clear();
 
-        for (const auto& lake : lakes)
-        {
-            lake.draw(world);
-        }
-
-        for (const auto& player : players)
-        {
-            player.draw(world);
-        }
+        Lake::drawLakes(world);
+        Player::drawPlayers(world);
 
         world.display();
 
-        sf::sleep(sf::milliseconds(100));
+        sf::sleep(sf::milliseconds(Config::TICK_MS));
     }
 
     return 0;

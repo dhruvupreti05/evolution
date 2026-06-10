@@ -1,16 +1,38 @@
 #include "lake.h"
+#include "config.h"
 
-Lake::Lake(
-    int centerX,
-    int centerY,
-    int numWaterBlocks,
-    int gridSize,
-    int cellSize
-)
-    : Clump(centerX, centerY, numWaterBlocks, gridSize),
-      cellSize(cellSize)
+#include <cstdlib>
+
+std::vector<Lake> Lake::lakes;
+
+Lake::Lake(int centerX, int centerY, int numWaterBlocks, int gridSize)
+    : Clump(centerX, centerY, numWaterBlocks, gridSize)
 {
     generateSandBoundary();
+}
+
+void Lake::init(GameWorld& world)
+{
+    for (int i = 0; i < Config::NUM_LAKES; ++i)
+    {
+        int gridX = rand() % world.getGridSize();
+        int gridY = rand() % world.getGridSize();
+
+        int numWaterBlocks =
+            rand() % Config::LAKE_BLOCK_RANGE + Config::MIN_LAKE_BLOCKS;
+
+        lakes.emplace_back(
+            gridX,
+            gridY,
+            numWaterBlocks,
+            world.getGridSize()
+        );
+    }
+
+    for (const auto& lake : lakes)
+    {
+        lake.addToWorld(world);
+    }
 }
 
 void Lake::generateSandBoundary()
@@ -73,4 +95,17 @@ void Lake::draw(GameWorld& world) const
     {
         world.drawTile(water.x, water.y, TileType::Water);
     }
+}
+
+void Lake::drawLakes(GameWorld& world)
+{
+    for (const auto& lake : lakes)
+    {
+        lake.draw(world);
+    }
+}
+
+const std::set<GridPos>& Lake::getSandCells() const
+{
+    return sandCells;
 }

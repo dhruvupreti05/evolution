@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
 #include <set>
 #include <vector>
 
@@ -11,7 +10,11 @@ struct GridPos
 
     bool operator<(const GridPos& other) const
     {
-        if (x != other.x) return x < other.x;
+        if (x != other.x)
+        {
+            return x < other.x;
+        }
+
         return y < other.y;
     }
 };
@@ -19,12 +22,7 @@ struct GridPos
 class Clump
 {
 public:
-    Clump(
-        int centerX,
-        int centerY,
-        int numBlocks,
-        int gridSize
-    );
+    Clump(int centerX, int centerY, int numBlocks, int gridSize);
 
     const std::set<GridPos>& getCells() const;
 
@@ -38,5 +36,7 @@ private:
     int gridSize;
 
     void generate();
+    void fillHoles();
+
     std::vector<GridPos> getNeighbors(const GridPos& pos) const;
 };
