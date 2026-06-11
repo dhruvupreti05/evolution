@@ -16,6 +16,9 @@ public:
     static void update(GameWorld& world);
     static void drawFoods(GameWorld& world);
 
+    static void addFoodAt(int x, int y);
+    static void removeFoodAt(int x, int y);
+
 private:
     static std::vector<FoodPosition> foods;
 

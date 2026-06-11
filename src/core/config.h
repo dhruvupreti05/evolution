@@ -49,6 +49,7 @@ namespace Config
     constexpr int HUMAN_AGE_INCREASE = 1;
 
     constexpr int HUMAN_VISION_RANGE = 10; // after 11 its too big for window view
+    constexpr int HUMAN_INVENTORY_SIZE = 5;
 
     // Inspector window settings
     constexpr int INSPECTOR_WINDOW_WIDTH = 420;

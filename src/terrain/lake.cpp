@@ -163,7 +163,14 @@ void Lake::addToWorld(GameWorld& world) const
 {
     for (const auto& sand : sandCells)
     {
-        if (world.isInsideGrid(sand.x, sand.y))
+        if (!world.isInsideGrid(sand.x, sand.y))
+        {
+            continue;
+        }
+
+        TileType currentTile = world.getTile(sand.x, sand.y);
+
+        if (currentTile == TileType::Empty || currentTile == TileType::Sand)
         {
             world.setTile(sand.x, sand.y, TileType::Sand);
         }
@@ -202,4 +209,120 @@ void Lake::drawLakes(GameWorld& world)
 const std::set<GridPos>& Lake::getSandCells() const
 {
     return sandCells;
+}
+
+void Lake::regenerateSandBoundary()
+{
+    sandCells.clear();
+    generateSandBoundary();
+}
+
+bool Lake::containsWaterCell(int x, int y) const
+{
+    return cells.count({x, y}) > 0;
+}
+
+bool Lake::isAdjacentToWaterCell(int x, int y) const
+{
+    for (const auto& water : cells)
+    {
+        int dx = std::abs(water.x - x);
+        int dy = std::abs(water.y - y);
+
+        if (dx <= 1 && dy <= 1)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void Lake::addWaterCell(int x, int y)
+{
+    cells.insert({x, y});
+    regenerateSandBoundary();
+}
+
+void Lake::removeWaterCell(int x, int y)
+{
+    cells.erase({x, y});
+    regenerateSandBoundary();
+}
+
+void Lake::rebuildLakeTerrain(GameWorld& world)
+{
+    for (int y = 0; y < world.getGridHeight(); ++y)
+    {
+        for (int x = 0; x < world.getGridWidth(); ++x)
+        {
+            TileType tile = world.getTile(x, y);
+
+            if (tile == TileType::Water || tile == TileType::Sand)
+            {
+                world.setTile(x, y, TileType::Empty);
+            }
+        }
+    }
+
+    for (const auto& lake : lakes)
+    {
+        lake.addToWorld(world);
+    }
+}
+
+bool Lake::removeWaterAt(GameWorld& world, int x, int y)
+{
+    for (auto it = lakes.begin(); it != lakes.end(); ++it)
+    {
+        if (!it->containsWaterCell(x, y))
+        {
+            continue;
+        }
+
+        it->removeWaterCell(x, y);
+
+        if (it->getCells().empty())
+        {
+            lakes.erase(it);
+        }
+
+        rebuildLakeTerrain(world);
+        return true;
+    }
+
+    return false;
+}
+
+bool Lake::placeWaterAt(GameWorld& world, int x, int y)
+{
+    TileType tile = world.getTile(x, y);
+
+    if (tile != TileType::Empty && tile != TileType::Sand)
+    {
+        return false;
+    }
+
+    for (auto& lake : lakes)
+    {
+        if (lake.isAdjacentToWaterCell(x, y))
+        {
+            lake.addWaterCell(x, y);
+            rebuildLakeTerrain(world);
+            return true;
+        }
+    }
+
+    Lake newLake(
+        x,
+        y,
+        1,
+        world.getGridWidth(),
+        world.getGridHeight()
+    );
+
+    lakes.push_back(newLake);
+    rebuildLakeTerrain(world);
+
+    return true;
 }

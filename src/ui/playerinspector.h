@@ -22,8 +22,8 @@ public:
 private:
     sf::RenderWindow window;
     sf::Font font;
-    bool fontLoaded = false;
 
+    bool fontLoaded = false;
     int selectedPlayerIndex = 0;
 
     void moveToNextPlayer();
@@ -34,12 +34,20 @@ private:
 
     void drawPanelBackground();
     void drawVision(const Player& player, const GameWorld& world);
-    void drawStats(const Player& player);
+    void drawInventory(const Player& player);
     void drawNeuralNetworkBox(float x, float y, float width, float height);
+    void drawStats(const Player& player);
 
     void drawText(
         const std::string& text,
         float x,
+        float y,
+        unsigned int size = 24
+    );
+
+    void drawCenteredText(
+        const std::string& text,
+        float centerX,
         float y,
         unsigned int size = 24
     );

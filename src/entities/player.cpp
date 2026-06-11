@@ -1,5 +1,7 @@
 #include "player.h"
 #include "core/config.h"
+#include "terrain/lake.h"
+#include "resources/food.h"
 
 #include <cstdlib>
 #include <set>
@@ -667,4 +669,166 @@ void Player::drawVisionOutline(GameWorld& world) const
 void Player::controlledMove(Direction direction, GameWorld& world)
 {
     move(direction, world);
+}
+
+void Player::getFacingCell(int& targetX, int& targetY) const
+{
+    int forwardDx;
+    int forwardDy;
+    int rightDx;
+    int rightDy;
+
+    orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
+
+    targetX = x + forwardDx;
+    targetY = y + forwardDy;
+}
+
+bool Player::canPickUp(TileType tile) const
+{
+    return tile == TileType::Water || tile == TileType::Food;
+}
+
+bool Player::canDropOn(TileType tile, int targetX, int targetY) const
+{
+    if (tile != TileType::Empty && tile != TileType::Sand)
+    {
+        return false;
+    }
+
+    if (Player::isPlayerAt(targetX, targetY))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool Player::tryPickUp(GameWorld& world)
+{
+    if (dead)
+    {
+        return false;
+    }
+
+    if (static_cast<int>(inventory.size()) >= Config::HUMAN_INVENTORY_SIZE)
+    {
+        return false;
+    }
+
+    int targetX;
+    int targetY;
+    getFacingCell(targetX, targetY);
+
+    if (!world.isInsideGrid(targetX, targetY))
+    {
+        return false;
+    }
+
+    TileType tile = world.getTile(targetX, targetY);
+
+    if (!canPickUp(tile))
+    {
+        return false;
+    }
+
+    if (tile == TileType::Food)
+    {
+        Food::removeFoodAt(targetX, targetY);
+        world.setTile(targetX, targetY, TileType::Empty);
+        inventory.push_back(TileType::Food);
+        return true;
+    }
+
+    if (tile == TileType::Water)
+    {
+        bool removed = Lake::removeWaterAt(world, targetX, targetY);
+
+        if (!removed)
+        {
+            return false;
+        }
+
+        inventory.push_back(TileType::Water);
+        return true;
+    }
+
+    return false;
+}
+
+bool Player::tryDrop(GameWorld& world)
+{
+    if (dead)
+    {
+        return false;
+    }
+
+    if (inventory.empty())
+    {
+        return false;
+    }
+
+    int targetX;
+    int targetY;
+    getFacingCell(targetX, targetY);
+
+    if (!world.isInsideGrid(targetX, targetY))
+    {
+        return false;
+    }
+
+    TileType targetTile = world.getTile(targetX, targetY);
+
+    if (!canDropOn(targetTile, targetX, targetY))
+    {
+        return false;
+    }
+
+    TileType item = inventory.back();
+
+    if (item == TileType::Food)
+    {
+        world.setTile(targetX, targetY, TileType::Food);
+        Food::addFoodAt(targetX, targetY);
+        inventory.pop_back();
+        return true;
+    }
+
+    if (item == TileType::Water)
+    {
+        bool placed = Lake::placeWaterAt(world, targetX, targetY);
+
+        if (!placed)
+        {
+            return false;
+        }
+
+        inventory.pop_back();
+        return true;
+    }
+
+    return false;
+}
+
+const std::vector<TileType>& Player::getInventory() const
+{
+    return inventory;
+}
+
+bool Player::isPlayerAt(int x, int y)
+{
+    for (const auto& player : players)
+    {
+        if (player.isDead())
+        {
+            continue;
+        }
+
+        if (player.getX() == x && player.getY() == y)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }

@@ -1,6 +1,7 @@
 #include "food.h"
 #include "core/config.h"
 
+#include <algorithm>
 #include <cstdlib>
 
 std::vector<FoodPosition> Food::foods;
@@ -41,4 +42,24 @@ void Food::drawFoods(GameWorld& world)
     {
         world.drawTile(food.x, food.y, TileType::Food);
     }
+}
+
+void Food::addFoodAt(int x, int y)
+{
+    foods.push_back({x, y});
+}
+
+void Food::removeFoodAt(int x, int y)
+{
+    foods.erase(
+        std::remove_if(
+            foods.begin(),
+            foods.end(),
+            [x, y](const FoodPosition& food)
+            {
+                return food.x == x && food.y == y;
+            }
+        ),
+        foods.end()
+    );
 }

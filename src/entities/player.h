@@ -88,6 +88,13 @@ public:
 
     void controlledMove(Direction direction, GameWorld& world);
 
+    bool tryPickUp(GameWorld& world);
+    bool tryDrop(GameWorld& world);
+
+    const std::vector<TileType>& getInventory() const;
+
+    static bool isPlayerAt(int x, int y);
+
 private:
     static std::vector<Player> players;
     static int nextId;
@@ -134,4 +141,10 @@ private:
 
     void drawVisionOutline(GameWorld& world) const;
     bool shouldLogVisibleTile(TileType tile) const;
+
+    std::vector<TileType> inventory;
+
+    void getFacingCell(int& targetX, int& targetY) const;
+    bool canPickUp(TileType tile) const;
+    bool canDropOn(TileType tile, int targetX, int targetY) const;
 };

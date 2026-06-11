@@ -26,10 +26,21 @@ public:
 
     const std::set<GridPos>& getSandCells() const;
 
+    static bool removeWaterAt(GameWorld& world, int x, int y);
+    static bool placeWaterAt(GameWorld& world, int x, int y);
+
 private:
     static std::vector<Lake> lakes;
 
     std::set<GridPos> sandCells;
 
     void generateSandBoundary();
+
+    void regenerateSandBoundary();
+    bool containsWaterCell(int x, int y) const;
+    bool isAdjacentToWaterCell(int x, int y) const;
+    void addWaterCell(int x, int y);
+    void removeWaterCell(int x, int y);
+
+    static void rebuildLakeTerrain(GameWorld& world);
 };
