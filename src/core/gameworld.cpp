@@ -113,6 +113,10 @@ sf::Color GameWorld::getColorFromTile(TileType type) const
             color = Config::COLOR_HUMAN;
             break;
 
+        case TileType::Predator:
+            color = Config::COLOR_PREDATOR;
+            break;
+
         case TileType::Empty:
         default:
             color = Config::COLOR_BACKGROUND;

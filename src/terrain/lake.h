@@ -29,7 +29,14 @@ public:
     static bool removeWaterAt(GameWorld& world, int x, int y);
     static bool placeWaterAt(GameWorld& world, int x, int y);
 
+    static void floodAll(GameWorld& world, int layers);
+
+    static void dryAll(GameWorld& world, int layers);
+    static int getTotalWaterBlocks();
+
 private:
+    
+    
     static std::vector<Lake> lakes;
 
     std::set<GridPos> sandCells;
@@ -43,4 +50,7 @@ private:
     void removeWaterCell(int x, int y);
 
     static void rebuildLakeTerrain(GameWorld& world);
+
+    void dryOneLayer();
+    void floodOneLayer();
 };

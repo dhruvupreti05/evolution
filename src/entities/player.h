@@ -112,6 +112,9 @@ public:
     static Player* getAdjacentEdibleBody(int x, int y);
     static Player* getNearestLivingPlayerOrBody(int x, int y);
 
+    static int countAlive();
+    static int countDead();
+
 private:
     int deadBodyTicksRemaining = 0;
     int bodyMealTicksRemaining = 0;

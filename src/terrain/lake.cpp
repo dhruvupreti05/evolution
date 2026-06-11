@@ -326,3 +326,169 @@ bool Lake::placeWaterAt(GameWorld& world, int x, int y)
 
     return true;
 }
+
+void Lake::floodOneLayer()
+{
+    std::vector<GridPos> directions = {
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1}
+    };
+
+    std::set<GridPos> newWaterCells;
+
+    for (const auto& waterCell : cells)
+    {
+        for (const auto& dir : directions)
+        {
+            GridPos neighbor = {
+                waterCell.x + dir.x,
+                waterCell.y + dir.y
+            };
+
+            if (
+                neighbor.x < 0 ||
+                neighbor.x >= gridWidth ||
+                neighbor.y < 0 ||
+                neighbor.y >= gridHeight
+            )
+            {
+                continue;
+            }
+
+            if (cells.count(neighbor) > 0)
+            {
+                continue;
+            }
+
+            newWaterCells.insert(neighbor);
+        }
+    }
+
+    for (const auto& cell : newWaterCells)
+    {
+        cells.insert(cell);
+    }
+
+    regenerateSandBoundary();
+}
+
+void Lake::dryOneLayer()
+{
+    std::vector<GridPos> directions = {
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1}
+    };
+
+    std::set<GridPos> cellsToRemove;
+
+    for (const auto& waterCell : cells)
+    {
+        bool isOuterWaterCell = false;
+
+        for (const auto& dir : directions)
+        {
+            GridPos neighbor = {
+                waterCell.x + dir.x,
+                waterCell.y + dir.y
+            };
+
+            if (
+                neighbor.x < 0 ||
+                neighbor.x >= gridWidth ||
+                neighbor.y < 0 ||
+                neighbor.y >= gridHeight
+            )
+            {
+                isOuterWaterCell = true;
+                break;
+            }
+
+            if (cells.count(neighbor) == 0)
+            {
+                isOuterWaterCell = true;
+                break;
+            }
+        }
+
+        if (isOuterWaterCell)
+        {
+            cellsToRemove.insert(waterCell);
+        }
+    }
+
+    for (const auto& cell : cellsToRemove)
+    {
+        cells.erase(cell);
+    }
+
+    regenerateSandBoundary();
+}
+
+void Lake::floodAll(GameWorld& world, int layers)
+{
+    if (layers <= 0)
+    {
+        return;
+    }
+
+    for (int i = 0; i < layers; ++i)
+    {
+        for (auto& lake : lakes)
+        {
+            lake.floodOneLayer();
+        }
+    }
+
+    rebuildLakeTerrain(world);
+}
+
+void Lake::dryAll(GameWorld& world, int layers)
+{
+    if (layers <= 0)
+    {
+        return;
+    }
+
+    for (int i = 0; i < layers; ++i)
+    {
+        for (auto it = lakes.begin(); it != lakes.end(); )
+        {
+            it->dryOneLayer();
+
+            if (it->getCells().empty())
+            {
+                it = lakes.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    rebuildLakeTerrain(world);
+}
+
+int Lake::getTotalWaterBlocks()
+{
+    int count = 0;
+
+    for (const auto& lake : lakes)
+    {
+        count += static_cast<int>(lake.getCells().size());
+    }
+
+    return count;
+}

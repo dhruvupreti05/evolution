@@ -133,6 +133,11 @@ void Predator::update(GameWorld& world)
 {
     if (dead)
     {
+        if (deadBodyTicksRemaining > 0)
+        {
+            deadBodyTicksRemaining--;
+        }
+
         return;
     }
 
@@ -151,6 +156,31 @@ void Predator::update(GameWorld& world)
     }
 
     updateHungerMode(world);
+}
+
+bool Predator::isDead() const
+{
+    return dead;
+}
+
+bool Predator::hasBody() const
+{
+    return dead && deadBodyTicksRemaining > 0;
+}
+
+void Predator::drawBodies(GameWorld& world)
+{
+    for (const auto& predator : predators)
+    {
+        if (predator.hasBody())
+        {
+            world.drawTile(
+                predator.getX(),
+                predator.getY(),
+                Config::COLOR_DEAD_PREDATOR
+            );
+        }
+    }
 }
 
 void Predator::decayStats()
@@ -177,9 +207,15 @@ void Predator::decayStats()
 
 void Predator::checkDeath()
 {
+    if (dead)
+    {
+        return;
+    }
+
     if (health <= 0 || thirst <= 0 || hunger <= 0)
     {
         dead = true;
+        deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
     }
 }
 
@@ -465,6 +501,11 @@ bool Predator::isPredatorAt(int x, int y)
     {
         if (predator.dead)
         {
+            if (predator.hasBody() && predator.x == x && predator.y == y)
+            {
+                return true;
+            }
+
             continue;
         }
 
@@ -485,4 +526,68 @@ int Predator::getX() const
 int Predator::getY() const
 {
     return y;
+}
+
+int Predator::countAlive()
+{
+    int count = 0;
+
+    for (const auto& predator : predators)
+    {
+        if (!predator.dead)
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+int Predator::countDead()
+{
+    int count = 0;
+
+    for (const auto& predator : predators)
+    {
+        if (predator.dead)
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
+{
+    for (auto& predator : predators)
+    {
+        if (predator.dead)
+        {
+            continue;
+        }
+
+        if (!predator.isWaterPredator())
+        {
+            continue;
+        }
+
+        if (!world.isInsideGrid(predator.x, predator.y))
+        {
+            predator.dead = true;
+            predator.deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
+            continue;
+        }
+
+        if (world.getTile(predator.x, predator.y) != TileType::Water)
+        {
+            predator.dead = true;
+            predator.deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
+        }
+    }
+}
+
+const std::vector<Predator>& Predator::getPredators()
+{
+    return predators;
 }

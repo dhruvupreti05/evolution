@@ -44,7 +44,7 @@ void Player::init(GameWorld& world)
             gridX = rand() % world.getGridWidth();
             gridY = rand() % world.getGridHeight();
         }
-        while (world.getTile(gridX, gridY) == TileType::Water);
+        while ( world.getTile(gridX, gridY) == TileType::Water || Player::isPlayerAt(gridX, gridY));
 
         players.emplace_back(gridX, gridY);
     }
@@ -495,6 +495,42 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
             side,
             otherPlayer.getX(),
             otherPlayer.getY()
+        });
+    }
+
+    // Third: see predators.
+    // This is after world tiles, so water predators draw over water.
+    for (const auto& predator : Predator::getPredators())
+    {
+        if (predator.isDead())
+        {
+            continue;
+        }
+
+        int dx = predator.getX() - x;
+        int dy = predator.getY() - y;
+
+        int forward = dx * forwardDx + dy * forwardDy;
+        int side = dx * rightDx + dy * rightDy;
+
+        if (forward < 1 || forward > Config::HUMAN_VISION_RANGE)
+        {
+            continue;
+        }
+
+        int sideLimit = forward - 1;
+
+        if (side < -sideLimit || side > sideLimit)
+        {
+            continue;
+        }
+
+        visibleTiles.push_back({
+            TileType::Predator,
+            forward,
+            side,
+            predator.getX(),
+            predator.getY()
         });
     }
 
@@ -1033,4 +1069,34 @@ Player* Player::getNearestLivingPlayerOrBody(int x, int y)
     }
 
     return nearest;
+}
+
+int Player::countAlive()
+{
+    int count = 0;
+
+    for (const auto& player : players)
+    {
+        if (!player.isDead())
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+int Player::countDead()
+{
+    int count = 0;
+
+    for (const auto& player : players)
+    {
+        if (player.isDead())
+        {
+            count++;
+        }
+    }
+
+    return count;
 }

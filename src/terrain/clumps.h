@@ -29,13 +29,13 @@ public:
 protected:
     std::set<GridPos> cells;
 
+    int gridWidth;
+    int gridHeight;
+
 private:
     int centerX;
     int centerY;
     int numBlocks;
-    
-    int gridWidth;
-    int gridHeight;
 
     void generate();
     void fillHoles();

@@ -35,6 +35,7 @@ namespace Config
     const sf::Color COLOR_SELECTED_HUMAN = sf::Color::Black;
     const sf::Color COLOR_DEAD_BODY = sf::Color(120, 120, 120);
     const sf::Color COLOR_PREDATOR = sf::Color::Red;
+    const sf::Color COLOR_DEAD_PREDATOR = COLOR_DEAD_BODY;
 
     // Human settings
     constexpr int HUMAN_START_HEALTH = 1000;
@@ -71,11 +72,12 @@ namespace Config
 
     // Body settings
     constexpr int TICKS_PER_DEAD_BODY = 300;
+    constexpr int TICKS_PER_DEAD_PREDATOR = 300;
     constexpr int TICKS_PER_MEAL_HUMAN = 10;
 
     // Predator settings
-    constexpr int NUMBER_OF_LAND_PREDATORS = 5;
-    constexpr int NUMBER_OF_WATER_PREDATORS = 5;
+    constexpr int NUMBER_OF_LAND_PREDATORS = 0;
+    constexpr int NUMBER_OF_WATER_PREDATORS = 50;
 
     constexpr int PREDATOR_START_HEALTH = 1000;
     constexpr int PREDATOR_START_THIRST = 1000;
@@ -90,5 +92,15 @@ namespace Config
     constexpr int HEALTH_PER_PREDATOR_ATTACK = 500;
     constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20;
     constexpr int PREDATOR_THIRST_PER_WATER_BLOCK = 200;
+
+    constexpr int WEATHER_MIN_DAYS_BETWEEN = 1;
+    constexpr int WEATHER_MAX_DAYS_BETWEEN = 2;
+    constexpr int WEATHER_FLOOD_LAYERS = 1;
+    constexpr int WEATHER_DROUGHT_LAYERS = 1;
+    constexpr int WEATHER_ALERT_TICKS = 20;
+
+    // Stats window settings
+    constexpr int STATS_WINDOW_WIDTH = 560;
+    constexpr int STATS_WINDOW_HEIGHT = 430;
 
 }

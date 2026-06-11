@@ -21,10 +21,10 @@ public:
     void draw(GameWorld& world);
 
 private:
+    bool fontLoaded = false;;
     sf::RenderWindow window;
     sf::Font font;
 
-    bool fontLoaded = false;
     int selectedPlayerIndex = 0;
 
     void moveToNextPlayer();

@@ -7,5 +7,6 @@ enum class TileType
     Sand,
     Tree,
     Food,
-    Human
+    Human,
+    Predator
 };

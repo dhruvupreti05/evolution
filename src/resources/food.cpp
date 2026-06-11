@@ -63,3 +63,26 @@ void Food::removeFoodAt(int x, int y)
         foods.end()
     );
 }
+
+int Food::getCount()
+{
+    return static_cast<int>(foods.size());
+}
+
+void Food::clearAll(GameWorld& world)
+{
+    for (const auto& food : foods)
+    {
+        if (!world.isInsideGrid(food.x, food.y))
+        {
+            continue;
+        }
+
+        if (world.getTile(food.x, food.y) == TileType::Food)
+        {
+            world.setTile(food.x, food.y, TileType::Empty);
+        }
+    }
+
+    foods.clear();
+}

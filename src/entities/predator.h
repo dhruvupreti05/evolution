@@ -28,8 +28,22 @@ public:
     int getX() const;
     int getY() const;
 
+    bool isDead() const;
+    bool hasBody() const;
+
+    static int countAlive();
+    static int countDead();
+
+    static void drawBodies(GameWorld& world);
+
+    static void killWaterPredatorsNotOnWater(GameWorld& world);
+
+    static const std::vector<Predator>& getPredators();
+
 private:
     static std::vector<Predator> predators;
+
+    int deadBodyTicksRemaining = 0;
 
     int x;
     int y;

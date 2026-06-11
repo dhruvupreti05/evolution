@@ -19,6 +19,10 @@ public:
     static void addFoodAt(int x, int y);
     static void removeFoodAt(int x, int y);
 
+    static void clearAll(GameWorld& world);
+
+    static int getCount();
+
 private:
     static std::vector<FoodPosition> foods;
 

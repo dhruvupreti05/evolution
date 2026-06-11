@@ -584,6 +584,10 @@ sf::Color PlayerInspector::getColorFromTile(TileType tile) const
             color = Config::COLOR_SAND;
             break;
 
+        case TileType::Predator:
+            color = Config::COLOR_PREDATOR;
+            break;
+
         case TileType::Empty:
         default:
             color = Config::COLOR_BACKGROUND;
