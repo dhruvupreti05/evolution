@@ -7,19 +7,7 @@
 
 PlayerInspector::PlayerInspector()
 {
-    fontLoaded = font.loadFromFile("assets/fonts/arial.ttf");
-
-    if (!fontLoaded)
-    {
-        fontLoaded = font.loadFromFile(
-            "/System/Library/Fonts/Supplemental/Arial.ttf"
-        );
-    }
-
-    if (!fontLoaded)
-    {
-        std::cerr << "Could not load inspector font.\n";
-    }
+    fontLoaded = font.loadFromFile("/System/Library/Fonts/Supplemental/Times New Roman.ttf");
 }
 
 void PlayerInspector::open()
@@ -240,6 +228,7 @@ void PlayerInspector::draw(GameWorld& world)
     Player::setInspectedPlayerId(player.getId());
 
     drawVision(player, world);
+    drawNeuralNetworkBox(55, 300, Config::INSPECTOR_WINDOW_WIDTH - 110, 230);
     drawStats(player);
 
     window.display();
@@ -323,33 +312,45 @@ void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
 
 void PlayerInspector::drawStats(const Player& player)
 {
-    float x = 55;
-    float y = Config::INSPECTOR_STATS_START_Y;
-    float spacing = 44;
+    float leftX = 70;
+    float rightX = 230;
+    float y = 610;
+    float spacing = 26;
 
-    drawText("Player ID: " + std::to_string(player.getId()), x, y);
-    y += spacing;
+    unsigned int statTextSize = 18;
 
-    drawText("Age: " + std::to_string(player.getAge()), x, y);
-    y += spacing;
+    // Left column
+    drawText("Player ID: " + std::to_string(player.getId()), leftX, y, statTextSize);
+    drawText("Age: " + std::to_string(player.getAge()), leftX, y + spacing, statTextSize);
+    drawText("Health: " + std::to_string(player.getHealth()), leftX, y + spacing * 2, statTextSize);
+    drawText("Thirst: " + std::to_string(player.getThirst()), leftX, y + spacing * 3, statTextSize);
 
-    drawText("Health: " + std::to_string(player.getHealth()), x, y);
-    y += spacing;
-
-    drawText("Thirst: " + std::to_string(player.getThirst()), x, y);
-    y += spacing;
-
-    drawText("Hunger: " + std::to_string(player.getHunger()), x, y);
-    y += spacing;
-
-    drawText("Gender: " + player.getGenderString(), x, y);
-    y += spacing;
-
-    drawText("Orientation: " + player.getOrientationString(), x, y);
-    y += spacing;
+    // Right column
+    drawText("Hunger: " + std::to_string(player.getHunger()), rightX, y, statTextSize);
+    drawText("Gender: " + player.getGenderString(), rightX, y + spacing, statTextSize);
+    drawText("Orientation: " + player.getOrientationString(), rightX, y + spacing * 2, statTextSize);
 
     std::string status = player.isDead() ? "Dead" : "Alive";
-    drawText("Status: " + status, x, y);
+    drawText("Status: " + status, rightX, y + spacing * 3, statTextSize);
+}
+
+void PlayerInspector::drawNeuralNetworkBox(
+    float x,
+    float y,
+    float width,
+    float height
+)
+{
+    sf::RectangleShape box;
+    box.setSize(sf::Vector2f(width, height));
+    box.setPosition(x, y);
+    box.setFillColor(Config::COLOR_BACKGROUND);
+    box.setOutlineColor(sf::Color::Black);
+    box.setOutlineThickness(2);
+
+    window.draw(box);
+
+    drawText("Neural Network", x + 12, y + 10, 16);
 }
 
 void PlayerInspector::drawText(

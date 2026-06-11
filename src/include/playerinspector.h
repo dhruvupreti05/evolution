@@ -35,6 +35,7 @@ private:
     void drawPanelBackground();
     void drawVision(const Player& player, const GameWorld& world);
     void drawStats(const Player& player);
+    void drawNeuralNetworkBox(float x, float y, float width, float height);
 
     void drawText(
         const std::string& text,

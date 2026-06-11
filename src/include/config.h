@@ -51,7 +51,7 @@ namespace Config
 
     constexpr int INSPECTOR_VIEW_TILE_SIZE = 18;
     constexpr int INSPECTOR_VIEW_TOP_MARGIN = 40;
-    constexpr int INSPECTOR_STATS_START_Y = 360;
+    constexpr int INSPECTOR_STATS_START_Y = 330;
 
     // Food settings
     constexpr int FOOD_SPAWN_ATTEMPTS_PER_TICK = 100;
