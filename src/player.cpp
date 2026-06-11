@@ -54,6 +54,11 @@ void Player::update(GameWorld& world)
         return;
     }
 
+    if (id == inspectedPlayerId)
+    {
+        return;
+    }
+
     moveRandomly(world);
 }
 
@@ -339,6 +344,7 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
 
     orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
 
+    // First: see world tiles like water, food, trees, etc.
     for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
     {
         int sideLimit = forward - 1;
@@ -368,6 +374,46 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
                 worldY
             });
         }
+    }
+
+    // Second: see other humans.
+    for (const auto& otherPlayer : players)
+    {
+        if (otherPlayer.isDead())
+        {
+            continue;
+        }
+
+        if (otherPlayer.getId() == id)
+        {
+            continue;
+        }
+
+        int dx = otherPlayer.getX() - x;
+        int dy = otherPlayer.getY() - y;
+
+        int forward = dx * forwardDx + dy * forwardDy;
+        int side = dx * rightDx + dy * rightDy;
+
+        if (forward < 1 || forward > Config::HUMAN_VISION_RANGE)
+        {
+            continue;
+        }
+
+        int sideLimit = forward - 1;
+
+        if (side < -sideLimit || side > sideLimit)
+        {
+            continue;
+        }
+
+        visibleTiles.push_back({
+            TileType::Human,
+            forward,
+            side,
+            otherPlayer.getX(),
+            otherPlayer.getY()
+        });
     }
 
     return visibleTiles;
@@ -617,4 +663,9 @@ void Player::drawVisionOutline(GameWorld& world) const
             );
         }
     }
+}
+
+void Player::controlledMove(Direction direction, GameWorld& world)
+{
+    move(direction, world);
 }

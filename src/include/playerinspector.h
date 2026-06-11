@@ -16,7 +16,7 @@ public:
 
     bool isOpen() const;
 
-    void handleEvents();
+    void handleEvents(GameWorld& world);
     void draw(GameWorld& world);
 
 private:
@@ -28,6 +28,9 @@ private:
 
     void moveToNextPlayer();
     void moveToPreviousPlayer();
+
+    void moveSelectedPlayer(Direction direction, GameWorld& world);
+    void updateInspectedPlayerId();
 
     void drawPanelBackground();
     void drawVision(const Player& player, const GameWorld& world);

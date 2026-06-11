@@ -6,6 +6,7 @@
 #include "gameworld.h"
 #include "player.h"
 #include "lake.h"
+#include "food.h"
 #include "playerinspector.h"
 
 int main()
@@ -55,6 +56,7 @@ int main()
         if (!paused)
         {
             Player::updatePlayers(world);
+            Food::update(world);
         }
 
         inspector.draw(world);
@@ -62,6 +64,7 @@ int main()
         world.clear();
 
         Lake::drawLakes(world);
+        Food::drawFoods(world);
         Player::drawPlayers(world);
 
         world.display();

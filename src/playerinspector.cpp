@@ -36,6 +36,8 @@ void PlayerInspector::open()
         ),
         "Player Inspector"
     );
+
+    updateInspectedPlayerId();
 }
 
 void PlayerInspector::close()
@@ -53,7 +55,7 @@ bool PlayerInspector::isOpen() const
     return window.isOpen();
 }
 
-void PlayerInspector::handleEvents()
+void PlayerInspector::handleEvents(GameWorld& world)
 {
     if (!window.isOpen())
     {
@@ -82,6 +84,26 @@ void PlayerInspector::handleEvents()
                 moveToPreviousPlayer();
             }
 
+            if (event.key.code == sf::Keyboard::W)
+            {
+                moveSelectedPlayer(Direction::Up, world);
+            }
+
+            if (event.key.code == sf::Keyboard::A)
+            {
+                moveSelectedPlayer(Direction::Left, world);
+            }
+
+            if (event.key.code == sf::Keyboard::S)
+            {
+                moveSelectedPlayer(Direction::Down, world);
+            }
+
+            if (event.key.code == sf::Keyboard::D)
+            {
+                moveSelectedPlayer(Direction::Right, world);
+            }
+
             if (event.key.code == sf::Keyboard::Escape)
             {
                 close();
@@ -91,12 +113,60 @@ void PlayerInspector::handleEvents()
     }
 }
 
+void PlayerInspector::moveSelectedPlayer(Direction direction, GameWorld& world)
+{
+    std::vector<Player>& players = Player::getPlayers();
+
+    if (players.empty())
+    {
+        return;
+    }
+
+    if (selectedPlayerIndex < 0 || selectedPlayerIndex >= static_cast<int>(players.size()))
+    {
+        selectedPlayerIndex = 0;
+    }
+
+    Player& player = players[selectedPlayerIndex];
+
+    if (player.isDead())
+    {
+        return;
+    }
+
+    player.controlledMove(direction, world);
+}
+
+void PlayerInspector::updateInspectedPlayerId()
+{
+    std::vector<Player>& players = Player::getPlayers();
+
+    if (players.empty())
+    {
+        Player::clearInspectedPlayer();
+        return;
+    }
+
+    if (selectedPlayerIndex < 0)
+    {
+        selectedPlayerIndex = 0;
+    }
+
+    if (selectedPlayerIndex >= static_cast<int>(players.size()))
+    {
+        selectedPlayerIndex = 0;
+    }
+
+    Player::setInspectedPlayerId(players[selectedPlayerIndex].getId());
+}
+
 void PlayerInspector::moveToNextPlayer()
 {
     std::vector<Player>& players = Player::getPlayers();
 
     if (players.empty())
     {
+        Player::clearInspectedPlayer();
         return;
     }
 
@@ -106,6 +176,8 @@ void PlayerInspector::moveToNextPlayer()
     {
         selectedPlayerIndex = 0;
     }
+
+    updateInspectedPlayerId();
 }
 
 void PlayerInspector::moveToPreviousPlayer()
@@ -123,6 +195,8 @@ void PlayerInspector::moveToPreviousPlayer()
     {
         selectedPlayerIndex = static_cast<int>(players.size()) - 1;
     }
+
+    updateInspectedPlayerId();
 }
 
 void PlayerInspector::draw(GameWorld& world)
@@ -133,7 +207,7 @@ void PlayerInspector::draw(GameWorld& world)
         return;
     }
 
-    handleEvents();
+    handleEvents(world);
 
     if (!window.isOpen())
     {
@@ -212,7 +286,7 @@ void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
             sf::RectangleShape square;
             square.setSize(sf::Vector2f(tileSize - 2, tileSize - 2));
             square.setPosition(drawX, drawY);
-            square.setFillColor(sf::Color(245, 245, 245));
+            square.setFillColor(Config::COLOR_BACKGROUND);
             square.setOutlineColor(sf::Color(215, 215, 215));
             square.setOutlineThickness(1);
 
@@ -305,22 +379,22 @@ sf::Color PlayerInspector::getColorFromTile(TileType tile) const
     switch (tile)
     {
         case TileType::Water:
-            return sf::Color::Blue;
+            return Config::COLOR_WATER;
 
         case TileType::Tree:
-            return sf::Color(34, 139, 34);
+            return Config::COLOR_TREE;
 
         case TileType::Food:
-            return sf::Color::Red;
+            return Config::COLOR_FOOD;
 
         case TileType::Human:
-            return sf::Color::White;
+            return Config::COLOR_HUMAN;
 
         case TileType::Sand:
-            return sf::Color(194, 178, 128);
+            return Config::COLOR_SAND;
 
         case TileType::Empty:
         default:
-            return sf::Color(245, 245, 245);
+            return Config::COLOR_BACKGROUND;
     }
 }

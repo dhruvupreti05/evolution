@@ -86,6 +86,8 @@ public:
 
     std::vector<VisibleTile> getVisibleTiles(const GameWorld& world) const;
 
+    void controlledMove(Direction direction, GameWorld& world);
+
 private:
     static std::vector<Player> players;
     static int nextId;
@@ -97,8 +99,6 @@ private:
     int y;
 
     Orientation orientation = Orientation::South;
-
-    void drawVisionOutline(GameWorld& world) const;
 
     std::array<MoveAttempt, MOVE_MEMORY_SIZE> previousMoves;
     int moveMemoryIndex = 0;
@@ -132,5 +132,6 @@ private:
         int& rightDy
     ) const;
 
+    void drawVisionOutline(GameWorld& world) const;
     bool shouldLogVisibleTile(TileType tile) const;
 };

@@ -14,7 +14,7 @@ namespace Config
 
     // Simulation settings
     constexpr int NUM_PLAYERS = 100;
-    constexpr int NUM_LAKES = 7;
+    constexpr int NUM_LAKES = 10;
 
     // Time settings
     constexpr int TICK_MS = 250;
@@ -30,7 +30,7 @@ namespace Config
     const sf::Color COLOR_SAND = sf::Color(194, 178, 128);
     const sf::Color COLOR_HUMAN = sf::Color::White;
     const sf::Color COLOR_TREE = sf::Color(34, 139, 34);
-    const sf::Color COLOR_FOOD = sf::Color::Red;
+    const sf::Color COLOR_FOOD = sf::Color::Green;
     const sf::Color COLOR_SELECTED_HUMAN = sf::Color::Black;
 
     // Human settings
@@ -43,7 +43,7 @@ namespace Config
     constexpr int HUMAN_HUNGER_DECAY = 1;
     constexpr int HUMAN_AGE_INCREASE = 1;
 
-    constexpr int HUMAN_VISION_RANGE = 8;
+    constexpr int HUMAN_VISION_RANGE = 10;
 
     // Inspector window settings
     constexpr int INSPECTOR_WINDOW_WIDTH = 420;
@@ -52,4 +52,9 @@ namespace Config
     constexpr int INSPECTOR_VIEW_TILE_SIZE = 18;
     constexpr int INSPECTOR_VIEW_TOP_MARGIN = 40;
     constexpr int INSPECTOR_STATS_START_Y = 360;
+
+    // Food settings
+    constexpr int FOOD_SPAWN_ATTEMPTS_PER_TICK = 100;
+    constexpr int FOOD_SPAWN_CHANCE_PERCENT = 50;
+
 }
