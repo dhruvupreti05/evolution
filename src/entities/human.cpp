@@ -1,4 +1,4 @@
-#include "player.h"
+#include "human.h"
 #include "core/config.h"
 #include "terrain/lake.h"
 #include "resources/food.h"
@@ -9,9 +9,9 @@
 #include <utility>
 #include <cmath>
 
-std::vector<Player> Player::players;
-int Player::nextId = 0;
-int Player::inspectedPlayerId = -1;
+std::vector<Human> Human::humans;
+int Human::nextId = 0;
+int Human::inspectedHumanId = -1;
 
 static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
 {
@@ -21,7 +21,7 @@ static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
     return dx + dy == 1;
 }
 
-Player::Player(int gridX, int gridY) : x(gridX),
+Human::Human(int gridX, int gridY) : x(gridX),
       y(gridY),
       health(Config::HUMAN_START_HEALTH + (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) - Config::HUMAN_START_HEALTH_BUFFER)),
       thirst(Config::HUMAN_START_THIRST + (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) - Config::HUMAN_START_THIRST_BUFFER)),
@@ -32,7 +32,7 @@ Player::Player(int gridX, int gridY) : x(gridX),
 {
 }
 
-void Player::init(GameWorld& world)
+void Human::init(GameWorld& world)
 {
     for (int i = 0; i < Config::NUM_PLAYERS; ++i)
     {
@@ -44,13 +44,13 @@ void Player::init(GameWorld& world)
             gridX = rand() % world.getGridWidth();
             gridY = rand() % world.getGridHeight();
         }
-        while ( world.getTile(gridX, gridY) == TileType::Water || Player::isPlayerAt(gridX, gridY));
+        while ( world.getTile(gridX, gridY) == TileType::Water || Human::isHumanAt(gridX, gridY));
 
-        players.emplace_back(gridX, gridY);
+        humans.emplace_back(gridX, gridY);
     }
 }
 
-void Player::update(GameWorld& world)
+void Human::update(GameWorld& world)
 {
     if (dead)
     {
@@ -70,7 +70,7 @@ void Player::update(GameWorld& world)
         return;
     }
 
-    if (id == inspectedPlayerId)
+    if (id == inspectedHumanId)
     {
         return;
     }
@@ -78,7 +78,7 @@ void Player::update(GameWorld& world)
     moveRandomly(world);
 }
 
-void Player::takeDamage(int amount)
+void Human::takeDamage(int amount)
 {
     if (dead)
     {
@@ -95,27 +95,27 @@ void Player::takeDamage(int amount)
     checkDeath();
 }
 
-bool Player::hasBody() const
+bool Human::hasBody() const
 {
     return dead && deadBodyTicksRemaining > 0 && bodyMealTicksRemaining > 0;
 }
 
-bool Player::isBodyEdible() const
+bool Human::isBodyEdible() const
 {
     return hasBody();
 }
 
-bool Player::isBodyClaimedThisTick() const
+bool Human::isBodyClaimedThisTick() const
 {
     return bodyClaimedThisTick;
 }
 
-void Player::claimBodyForEating()
+void Human::claimBodyForEating()
 {
     bodyClaimedThisTick = true;
 }
 
-void Player::eatBodyOneTick()
+void Human::eatBodyOneTick()
 {
     if (!hasBody())
     {
@@ -130,7 +130,7 @@ void Player::eatBodyOneTick()
     }
 }
 
-void Player::decayStats()
+void Human::decayStats()
 {
     health -= Config::HUMAN_HEALTH_DECAY;
     thirst -= Config::HUMAN_THIRST_DECAY;
@@ -153,7 +153,7 @@ void Player::decayStats()
     }
 }
 
-void Player::checkDeath()
+void Human::checkDeath()
 {
     if (dead)
     {
@@ -169,7 +169,7 @@ void Player::checkDeath()
     }
 }
 
-void Player::recordMoveAttempt(MoveAttempt attempt)
+void Human::recordMoveAttempt(MoveAttempt attempt)
 {
     previousMoves[moveMemoryIndex] = attempt;
 
@@ -181,7 +181,7 @@ void Player::recordMoveAttempt(MoveAttempt attempt)
     }
 }
 
-MoveAttempt Player::getPreviousMove() const
+MoveAttempt Human::getPreviousMove() const
 {
     int previousIndex = moveMemoryIndex - 1;
 
@@ -193,7 +193,7 @@ MoveAttempt Player::getPreviousMove() const
     return previousMoves[previousIndex];
 }
 
-Direction Player::getRandomDirection() const
+Direction Human::getRandomDirection() const
 {
     int choice = rand() % 5;
 
@@ -219,7 +219,7 @@ Direction Player::getRandomDirection() const
     }
 }
 
-void Player::directionToDelta(Direction direction, int& dx, int& dy) const
+void Human::directionToDelta(Direction direction, int& dx, int& dy) const
 {
     dx = 0;
     dy = 0;
@@ -248,7 +248,7 @@ void Player::directionToDelta(Direction direction, int& dx, int& dy) const
     }
 }
 
-void Player::updateOrientation(Direction direction)
+void Human::updateOrientation(Direction direction)
 {
     switch (direction)
     {
@@ -274,7 +274,7 @@ void Player::updateOrientation(Direction direction)
     }
 }
 
-void Player::move(Direction direction, GameWorld& world)
+void Human::move(Direction direction, GameWorld& world)
 {
     if (dead)
     {
@@ -305,7 +305,7 @@ void Player::move(Direction direction, GameWorld& world)
         return;
     }
 
-    if (direction != Direction::Stay && Player::isBlockingEntityAt(newX, newY))
+    if (direction != Direction::Stay && Human::isBlockingEntityAt(newX, newY))
     {
         recordMoveAttempt(attempt);
         return;
@@ -354,14 +354,14 @@ void Player::move(Direction direction, GameWorld& world)
     recordMoveAttempt(attempt);
 }
 
-void Player::moveRandomly(GameWorld& world)
+void Human::moveRandomly(GameWorld& world)
 {
     Direction direction = getRandomDirection();
 
     move(direction, world);
 }
 
-void Player::orientationToBasis(
+void Human::orientationToBasis(
     int& forwardDx,
     int& forwardDy,
     int& rightDx,
@@ -405,12 +405,12 @@ void Player::orientationToBasis(
     }
 }
 
-bool Player::shouldLogVisibleTile(TileType tile) const
+bool Human::shouldLogVisibleTile(TileType tile) const
 {
     return tile != TileType::Empty && tile != TileType::Sand;
 }
 
-std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
+std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
 {
     std::vector<VisibleTile> visibleTiles;
 
@@ -459,20 +459,20 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
     }
 
     // Second: see other humans.
-    for (const auto& otherPlayer : players)
+    for (const auto& otherHuman : humans)
     {
-        if (otherPlayer.isDead())
+        if (otherHuman.isDead())
         {
             continue;
         }
 
-        if (otherPlayer.getId() == id)
+        if (otherHuman.getId() == id)
         {
             continue;
         }
 
-        int dx = otherPlayer.getX() - x;
-        int dy = otherPlayer.getY() - y;
+        int dx = otherHuman.getX() - x;
+        int dy = otherHuman.getY() - y;
 
         int forward = dx * forwardDx + dy * forwardDy;
         int side = dx * rightDx + dy * rightDy;
@@ -493,8 +493,8 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
             TileType::Human,
             forward,
             side,
-            otherPlayer.getX(),
-            otherPlayer.getY()
+            otherHuman.getX(),
+            otherHuman.getY()
         });
     }
 
@@ -537,14 +537,14 @@ std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
     return visibleTiles;
 }
 
-void Player::draw(GameWorld& world) const
+void Human::draw(GameWorld& world) const
 {
     if (dead)
     {
         return;
     }
 
-    if (id == inspectedPlayerId)
+    if (id == inspectedHumanId)
     {
         drawVisionOutline(world);
         world.drawTile(x, y, Config::COLOR_SELECTED_HUMAN);
@@ -555,123 +555,123 @@ void Player::draw(GameWorld& world) const
     }
 }
 
-void Player::drawBodies(GameWorld& world)
+void Human::drawBodies(GameWorld& world)
 {
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.hasBody())
+        if (human.hasBody())
         {
-            world.drawTile(player.getX(), player.getY(), Config::COLOR_DEAD_BODY);
+            world.drawTile(human.getX(), human.getY(), Config::COLOR_DEAD_BODY);
         }
     }
 }
 
-void Player::resetBodyEatingClaims()
+void Human::resetBodyEatingClaims()
 {
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        player.bodyClaimedThisTick = false;
+        human.bodyClaimedThisTick = false;
     }
 }
 
-void Player::updatePlayers(GameWorld& world)
+void Human::updateHumans(GameWorld& world)
 {
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        player.update(world);
+        human.update(world);
     }
 }
 
-void Player::movePlayers(GameWorld& world)
+void Human::moveHumans(GameWorld& world)
 {
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        player.moveRandomly(world);
+        human.moveRandomly(world);
     }
 }
 
-void Player::drawPlayers(GameWorld& world)
+void Human::drawHumans(GameWorld& world)
 {
-    int selectedId = Player::getInspectedPlayerId();
+    int selectedId = Human::getInspectedHumanId();
 
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.getId() != selectedId)
+        if (human.getId() != selectedId)
         {
-            player.draw(world);
+            human.draw(world);
         }
     }
 
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.getId() == selectedId)
+        if (human.getId() == selectedId)
         {
-            player.draw(world);
+            human.draw(world);
         }
     }
 }
 
-std::vector<Player>& Player::getPlayers()
+std::vector<Human>& Human::getHumans()
 {
-    return players;
+    return humans;
 }
 
-void Player::setInspectedPlayerId(int playerId)
+void Human::setInspectedHumanId(int humanId)
 {
-    inspectedPlayerId = playerId;
+    inspectedHumanId = humanId;
 }
 
-void Player::clearInspectedPlayer()
+void Human::clearInspectedHuman()
 {
-    inspectedPlayerId = -1;
+    inspectedHumanId = -1;
 }
 
-int Player::getX() const
+int Human::getX() const
 {
     return x;
 }
 
-int Player::getY() const
+int Human::getY() const
 {
     return y;
 }
 
-int Player::getHealth() const
+int Human::getHealth() const
 {
     return health;
 }
 
-int Player::getThirst() const
+int Human::getThirst() const
 {
     return thirst;
 }
 
-int Player::getHunger() const
+int Human::getHunger() const
 {
     return hunger;
 }
 
-int Player::getAge() const
+int Human::getAge() const
 {
     return age;
 }
 
-int Player::getId() const
+int Human::getId() const
 {
     return id;
 }
 
-Gender Player::getGender() const
+Gender Human::getGender() const
 {
     return gender;
 }
 
-Orientation Player::getOrientation() const
+Orientation Human::getOrientation() const
 {
     return orientation;
 }
 
-std::string Player::getGenderString() const
+std::string Human::getGenderString() const
 {
     switch (gender)
     {
@@ -686,7 +686,7 @@ std::string Player::getGenderString() const
     }
 }
 
-std::string Player::getOrientationString() const
+std::string Human::getOrientationString() const
 {
     switch (orientation)
     {
@@ -707,17 +707,17 @@ std::string Player::getOrientationString() const
     }
 }
 
-bool Player::isDead() const
+bool Human::isDead() const
 {
     return dead;
 }
 
-int Player::getInspectedPlayerId()
+int Human::getInspectedHumanId()
 {
-    return inspectedPlayerId;
+    return inspectedHumanId;
 }
 
-void Player::drawVisionOutline(GameWorld& world) const
+void Human::drawVisionOutline(GameWorld& world) const
 {
     if (dead)
     {
@@ -802,12 +802,12 @@ void Player::drawVisionOutline(GameWorld& world) const
     }
 }
 
-void Player::controlledMove(Direction direction, GameWorld& world)
+void Human::controlledMove(Direction direction, GameWorld& world)
 {
     move(direction, world);
 }
 
-void Player::getFacingCell(int& targetX, int& targetY) const
+void Human::getFacingCell(int& targetX, int& targetY) const
 {
     int forwardDx;
     int forwardDy;
@@ -820,19 +820,19 @@ void Player::getFacingCell(int& targetX, int& targetY) const
     targetY = y + forwardDy;
 }
 
-bool Player::canPickUp(TileType tile) const
+bool Human::canPickUp(TileType tile) const
 {
     return tile == TileType::Water || tile == TileType::Food;
 }
 
-bool Player::canDropOn(TileType tile, int targetX, int targetY) const
+bool Human::canDropOn(TileType tile, int targetX, int targetY) const
 {
     if (tile != TileType::Empty && tile != TileType::Sand)
     {
         return false;
     }
 
-    if (Player::isPlayerAt(targetX, targetY))
+    if (Human::isHumanAt(targetX, targetY))
     {
         return false;
     }
@@ -840,7 +840,7 @@ bool Player::canDropOn(TileType tile, int targetX, int targetY) const
     return true;
 }
 
-bool Player::tryPickUp(GameWorld& world)
+bool Human::tryPickUp(GameWorld& world)
 {
     if (dead)
     {
@@ -892,7 +892,7 @@ bool Player::tryPickUp(GameWorld& world)
     return false;
 }
 
-bool Player::tryDrop(GameWorld& world)
+bool Human::tryDrop(GameWorld& world)
 {
     if (dead)
     {
@@ -946,18 +946,18 @@ bool Player::tryDrop(GameWorld& world)
     return false;
 }
 
-const std::vector<TileType>& Player::getInventory() const
+const std::vector<TileType>& Human::getInventory() const
 {
     return inventory;
 }
 
-bool Player::isPlayerAt(int x, int y)
+bool Human::isHumanAt(int x, int y)
 {
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.isDead())
+        if (human.isDead())
         {
-            if (player.hasBody() && player.getX() == x && player.getY() == y)
+            if (human.hasBody() && human.getX() == x && human.getY() == y)
             {
                 return true;
             }
@@ -965,7 +965,7 @@ bool Player::isPlayerAt(int x, int y)
             continue;
         }
 
-        if (player.getX() == x && player.getY() == y)
+        if (human.getX() == x && human.getY() == y)
         {
             return true;
         }
@@ -974,13 +974,13 @@ bool Player::isPlayerAt(int x, int y)
     return false;
 }
 
-bool Player::isBlockingEntityAt(int x, int y)
+bool Human::isBlockingEntityAt(int x, int y)
 {
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.isDead())
+        if (human.isDead())
         {
-            if (player.hasBody() && player.getX() == x && player.getY() == y)
+            if (human.hasBody() && human.getX() == x && human.getY() == y)
             {
                 return true;
             }
@@ -988,7 +988,7 @@ bool Player::isBlockingEntityAt(int x, int y)
             continue;
         }
 
-        if (player.getX() == x && player.getY() == y)
+        if (human.getX() == x && human.getY() == y)
         {
             return true;
         }
@@ -1002,68 +1002,68 @@ bool Player::isBlockingEntityAt(int x, int y)
     return false;
 }
 
-Player* Player::getAdjacentLivingPlayer(int x, int y)
+Human* Human::getAdjacentLivingHuman(int x, int y)
 {
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        if (player.isDead())
+        if (human.isDead())
         {
             continue;
         }
 
-        if (isFourNeighborDistance(x, y, player.getX(), player.getY()))
+        if (isFourNeighborDistance(x, y, human.getX(), human.getY()))
         {
-            return &player;
+            return &human;
         }
     }
 
     return nullptr;
 }
 
-Player* Player::getAdjacentEdibleBody(int x, int y)
+Human* Human::getAdjacentEdibleBody(int x, int y)
 {
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        if (!player.isBodyEdible())
+        if (!human.isBodyEdible())
         {
             continue;
         }
 
-        if (player.isBodyClaimedThisTick())
+        if (human.isBodyClaimedThisTick())
         {
             continue;
         }
 
-        if (isFourNeighborDistance(x, y, player.getX(), player.getY()))
+        if (isFourNeighborDistance(x, y, human.getX(), human.getY()))
         {
-            return &player;
+            return &human;
         }
     }
 
     return nullptr;
 }
 
-Player* Player::getNearestLivingPlayerOrBody(int x, int y)
+Human* Human::getNearestLivingHumanOrBody(int x, int y)
 {
-    Player* nearest = nullptr;
+    Human* nearest = nullptr;
     int bestDistance = 0;
 
-    for (auto& player : players)
+    for (auto& human : humans)
     {
-        bool validTarget = !player.isDead() || player.isBodyEdible();
+        bool validTarget = !human.isDead() || human.isBodyEdible();
 
         if (!validTarget)
         {
             continue;
         }
 
-        int dx = std::abs(player.getX() - x);
-        int dy = std::abs(player.getY() - y);
+        int dx = std::abs(human.getX() - x);
+        int dy = std::abs(human.getY() - y);
         int distance = dx + dy;
 
         if (nearest == nullptr || distance < bestDistance)
         {
-            nearest = &player;
+            nearest = &human;
             bestDistance = distance;
         }
     }
@@ -1071,13 +1071,13 @@ Player* Player::getNearestLivingPlayerOrBody(int x, int y)
     return nearest;
 }
 
-int Player::countAlive()
+int Human::countAlive()
 {
     int count = 0;
 
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (!player.isDead())
+        if (!human.isDead())
         {
             count++;
         }
@@ -1086,13 +1086,13 @@ int Player::countAlive()
     return count;
 }
 
-int Player::countDead()
+int Human::countDead()
 {
     int count = 0;
 
-    for (const auto& player : players)
+    for (const auto& human : humans)
     {
-        if (player.isDead())
+        if (human.isDead())
         {
             count++;
         }

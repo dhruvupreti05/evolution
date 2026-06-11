@@ -4,10 +4,10 @@
 
 #include "core/config.h"
 #include "core/gameworld.h"
-#include "entities/player.h"
+#include "entities/human.h"
 #include "terrain/lake.h"
 #include "resources/food.h"
-#include "ui/playerinspector.h"
+#include "ui/humaninspector.h"
 #include "core/daynight.h"
 #include "entities/predator.h"
 #include "core/weather.h"
@@ -19,11 +19,11 @@ int main()
 
 GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH, Config::GRID_HEIGHT, Config::CELL_SIZE, "Evolution Simulation");
 
-    PlayerInspector inspector;
+    HumanInspector inspector;
     SimulationStats statsWindow;
 
     Lake::init(world);
-    Player::init(world);
+    Human::init(world);
     Predator::init(world);
     Weather::init();
 
@@ -72,9 +72,9 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
         {
             DayNight::update();
 
-            Player::resetBodyEatingClaims();
+            Human::resetBodyEatingClaims();
 
-            Player::updatePlayers(world);
+            Human::updateHumans(world);
             Predator::updatePredators(world);
             Food::update(world);
 
@@ -88,10 +88,10 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
         Lake::drawLakes(world);
         Food::drawFoods(world);
 
-        Player::drawBodies(world);
+        Human::drawBodies(world);
         Predator::drawBodies(world);
 
-        Player::drawPlayers(world);
+        Human::drawHumans(world);
         Predator::drawPredators(world);
 
         world.display();

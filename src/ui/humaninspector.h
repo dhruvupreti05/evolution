@@ -4,13 +4,13 @@
 #include <string>
 
 #include "core/gameworld.h"
-#include "entities/player.h"
+#include "entities/human.h"
 #include "core/daynight.h"
 
-class PlayerInspector
+class HumanInspector
 {
 public:
-    PlayerInspector();
+    HumanInspector();
 
     void open();
     void close();
@@ -25,19 +25,19 @@ private:
     sf::RenderWindow window;
     sf::Font font;
 
-    int selectedPlayerIndex = 0;
+    int selectedHumanIndex = 0;
 
-    void moveToNextPlayer();
-    void moveToPreviousPlayer();
+    void moveToNextHuman();
+    void moveToPreviousHuman();
 
-    void moveSelectedPlayer(Direction direction, GameWorld& world);
-    void updateInspectedPlayerId();
+    void moveSelectedHuman(Direction direction, GameWorld& world);
+    void updateInspectedHumanId();
 
     void drawPanelBackground();
-    void drawVision(const Player& player, const GameWorld& world);
-    void drawInventory(const Player& player);
+    void drawVision(const Human& human, const GameWorld& world);
+    void drawInventory(const Human& human);
     void drawNeuralNetworkBox(float x, float y, float width, float height);
-    void drawStats(const Player& player);
+    void drawStats(const Human& human);
 
     void drawText(
         const std::string& text,

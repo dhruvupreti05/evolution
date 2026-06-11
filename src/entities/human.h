@@ -47,25 +47,25 @@ struct VisibleTile
     int worldY = 0;
 };
 
-class Player
+class Human
 {
 public:
-    Player(int gridX, int gridY);
+    Human(int gridX, int gridY);
 
     void update(GameWorld& world);
     void moveRandomly(GameWorld& world);
     void draw(GameWorld& world) const;
 
     static void init(GameWorld& world);
-    static void updatePlayers(GameWorld& world);
-    static void drawPlayers(GameWorld& world);
-    static void movePlayers(GameWorld& world);
+    static void updateHumans(GameWorld& world);
+    static void drawHumans(GameWorld& world);
+    static void moveHumans(GameWorld& world);
 
-    static std::vector<Player>& getPlayers();
+    static std::vector<Human>& getHumans();
 
-    static void setInspectedPlayerId(int playerId);
-    static int getInspectedPlayerId();
-    static void clearInspectedPlayer();
+    static void setInspectedHumanId(int humanId);
+    static int getInspectedHumanId();
+    static void clearInspectedHuman();
 
     int getX() const;
     int getY() const;
@@ -93,7 +93,7 @@ public:
 
     const std::vector<TileType>& getInventory() const;
 
-    static bool isPlayerAt(int x, int y);
+    static bool isHumanAt(int x, int y);
 
     void takeDamage(int amount);
 
@@ -108,9 +108,9 @@ public:
     static void resetBodyEatingClaims();
 
     static bool isBlockingEntityAt(int x, int y);
-    static Player* getAdjacentLivingPlayer(int x, int y);
-    static Player* getAdjacentEdibleBody(int x, int y);
-    static Player* getNearestLivingPlayerOrBody(int x, int y);
+    static Human* getAdjacentLivingHuman(int x, int y);
+    static Human* getAdjacentEdibleBody(int x, int y);
+    static Human* getNearestLivingHumanOrBody(int x, int y);
 
     static int countAlive();
     static int countDead();
@@ -120,9 +120,9 @@ private:
     int bodyMealTicksRemaining = 0;
     bool bodyClaimedThisTick = false;
     
-    static std::vector<Player> players;
+    static std::vector<Human> humans;
     static int nextId;
-    static int inspectedPlayerId;
+    static int inspectedHumanId;
 
     static constexpr int MOVE_MEMORY_SIZE = 10;
 

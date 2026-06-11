@@ -39,7 +39,7 @@ namespace
                 continue;
             }
 
-            if (Player::isBlockingEntityAt(candidateX, candidateY))
+            if (Human::isBlockingEntityAt(candidateX, candidateY))
             {
                 continue;
             }
@@ -64,7 +64,7 @@ namespace
                 continue;
             }
 
-            if (Player::isBlockingEntityAt(candidateX, candidateY))
+            if (Human::isBlockingEntityAt(candidateX, candidateY))
             {
                 continue;
             }
@@ -246,7 +246,7 @@ void Predator::updateHungerMode(GameWorld& world)
         return;
     }
 
-    Player* target = Player::getNearestLivingPlayerOrBody(x, y);
+    Human* target = Human::getNearestLivingHumanOrBody(x, y);
 
     if (target == nullptr)
     {
@@ -299,7 +299,7 @@ void Predator::updateThirstMode(GameWorld& world)
 
 bool Predator::tryEatAdjacentBody()
 {
-    Player* body = Player::getAdjacentEdibleBody(x, y);
+    Human* body = Human::getAdjacentEdibleBody(x, y);
 
     if (body == nullptr)
     {
@@ -321,14 +321,14 @@ bool Predator::tryEatAdjacentBody()
 
 bool Predator::tryAttackAdjacentLivingHuman()
 {
-    Player* player = Player::getAdjacentLivingPlayer(x, y);
+    Human* human = Human::getAdjacentLivingHuman(x, y);
 
-    if (player == nullptr)
+    if (human == nullptr)
     {
         return false;
     }
 
-    player->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK);
+    human->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK);
 
     return true;
 }
@@ -460,7 +460,7 @@ bool Predator::canMoveTo(GameWorld& world, int targetX, int targetY) const
         return false;
     }
 
-    if (Player::isBlockingEntityAt(targetX, targetY))
+    if (Human::isBlockingEntityAt(targetX, targetY))
     {
         return false;
     }

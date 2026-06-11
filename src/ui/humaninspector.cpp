@@ -1,18 +1,18 @@
-#include "playerinspector.h"
+#include "humaninspector.h"
 #include "core/config.h"
 
 #include <vector>
 #include <string>
 #include <iostream>
 
-PlayerInspector::PlayerInspector()
+HumanInspector::HumanInspector()
 {
     fontLoaded = font.loadFromFile(
         "/System/Library/Fonts/Supplemental/Times New Roman.ttf"
     );
 }
 
-void PlayerInspector::open()
+void HumanInspector::open()
 {
     if (window.isOpen())
     {
@@ -24,28 +24,28 @@ void PlayerInspector::open()
             Config::INSPECTOR_WINDOW_WIDTH,
             Config::INSPECTOR_WINDOW_HEIGHT
         ),
-        "Player Inspector"
+        "Human Inspector"
     );
 
-    updateInspectedPlayerId();
+    updateInspectedHumanId();
 }
 
-void PlayerInspector::close()
+void HumanInspector::close()
 {
     if (window.isOpen())
     {
         window.close();
     }
 
-    Player::clearInspectedPlayer();
+    Human::clearInspectedHuman();
 }
 
-bool PlayerInspector::isOpen() const
+bool HumanInspector::isOpen() const
 {
     return window.isOpen();
 }
 
-void PlayerInspector::handleEvents(GameWorld& world)
+void HumanInspector::handleEvents(GameWorld& world)
 {
     if (!window.isOpen())
     {
@@ -69,67 +69,67 @@ void PlayerInspector::handleEvents(GameWorld& world)
 
         if (event.key.code == sf::Keyboard::Right)
         {
-            moveToNextPlayer();
+            moveToNextHuman();
         }
 
         if (event.key.code == sf::Keyboard::Left)
         {
-            moveToPreviousPlayer();
+            moveToPreviousHuman();
         }
 
         if (event.key.code == sf::Keyboard::W)
         {
-            moveSelectedPlayer(Direction::Up, world);
+            moveSelectedHuman(Direction::Up, world);
         }
 
         if (event.key.code == sf::Keyboard::A)
         {
-            moveSelectedPlayer(Direction::Left, world);
+            moveSelectedHuman(Direction::Left, world);
         }
 
         if (event.key.code == sf::Keyboard::S)
         {
-            moveSelectedPlayer(Direction::Down, world);
+            moveSelectedHuman(Direction::Down, world);
         }
 
         if (event.key.code == sf::Keyboard::D)
         {
-            moveSelectedPlayer(Direction::Right, world);
+            moveSelectedHuman(Direction::Right, world);
         }
 
         if (event.key.code == sf::Keyboard::E)
         {
-            std::vector<Player>& players = Player::getPlayers();
+            std::vector<Human>& humans = Human::getHumans();
 
-            if (!players.empty())
+            if (!humans.empty())
             {
                 if (
-                    selectedPlayerIndex < 0 ||
-                    selectedPlayerIndex >= static_cast<int>(players.size())
+                    selectedHumanIndex < 0 ||
+                    selectedHumanIndex >= static_cast<int>(humans.size())
                 )
                 {
-                    selectedPlayerIndex = 0;
+                    selectedHumanIndex = 0;
                 }
 
-                players[selectedPlayerIndex].tryPickUp(world);
+                humans[selectedHumanIndex].tryPickUp(world);
             }
         }
 
         if (event.key.code == sf::Keyboard::R)
         {
-            std::vector<Player>& players = Player::getPlayers();
+            std::vector<Human>& humans = Human::getHumans();
 
-            if (!players.empty())
+            if (!humans.empty())
             {
                 if (
-                    selectedPlayerIndex < 0 ||
-                    selectedPlayerIndex >= static_cast<int>(players.size())
+                    selectedHumanIndex < 0 ||
+                    selectedHumanIndex >= static_cast<int>(humans.size())
                 )
                 {
-                    selectedPlayerIndex = 0;
+                    selectedHumanIndex = 0;
                 }
 
-                players[selectedPlayerIndex].tryDrop(world);
+                humans[selectedHumanIndex].tryDrop(world);
             }
         }
 
@@ -141,100 +141,100 @@ void PlayerInspector::handleEvents(GameWorld& world)
     }
 }
 
-void PlayerInspector::moveSelectedPlayer(Direction direction, GameWorld& world)
+void HumanInspector::moveSelectedHuman(Direction direction, GameWorld& world)
 {
-    std::vector<Player>& players = Player::getPlayers();
+    std::vector<Human>& humans = Human::getHumans();
 
-    if (players.empty())
+    if (humans.empty())
     {
         return;
     }
 
     if (
-        selectedPlayerIndex < 0 ||
-        selectedPlayerIndex >= static_cast<int>(players.size())
+        selectedHumanIndex < 0 ||
+        selectedHumanIndex >= static_cast<int>(humans.size())
     )
     {
-        selectedPlayerIndex = 0;
+        selectedHumanIndex = 0;
     }
 
-    Player& player = players[selectedPlayerIndex];
+    Human& human = humans[selectedHumanIndex];
 
-    if (player.isDead())
+    if (human.isDead())
     {
         return;
     }
 
-    player.controlledMove(direction, world);
+    human.controlledMove(direction, world);
 }
 
-void PlayerInspector::updateInspectedPlayerId()
+void HumanInspector::updateInspectedHumanId()
 {
-    std::vector<Player>& players = Player::getPlayers();
+    std::vector<Human>& humans = Human::getHumans();
 
-    if (players.empty())
+    if (humans.empty())
     {
-        Player::clearInspectedPlayer();
+        Human::clearInspectedHuman();
         return;
     }
 
-    if (selectedPlayerIndex < 0)
+    if (selectedHumanIndex < 0)
     {
-        selectedPlayerIndex = 0;
+        selectedHumanIndex = 0;
     }
 
-    if (selectedPlayerIndex >= static_cast<int>(players.size()))
+    if (selectedHumanIndex >= static_cast<int>(humans.size()))
     {
-        selectedPlayerIndex = 0;
+        selectedHumanIndex = 0;
     }
 
-    Player::setInspectedPlayerId(players[selectedPlayerIndex].getId());
+    Human::setInspectedHumanId(humans[selectedHumanIndex].getId());
 }
 
-void PlayerInspector::moveToNextPlayer()
+void HumanInspector::moveToNextHuman()
 {
-    std::vector<Player>& players = Player::getPlayers();
+    std::vector<Human>& humans = Human::getHumans();
 
-    if (players.empty())
+    if (humans.empty())
     {
-        Player::clearInspectedPlayer();
+        Human::clearInspectedHuman();
         return;
     }
 
-    selectedPlayerIndex++;
+    selectedHumanIndex++;
 
-    if (selectedPlayerIndex >= static_cast<int>(players.size()))
+    if (selectedHumanIndex >= static_cast<int>(humans.size()))
     {
-        selectedPlayerIndex = 0;
+        selectedHumanIndex = 0;
     }
 
-    updateInspectedPlayerId();
+    updateInspectedHumanId();
 }
 
-void PlayerInspector::moveToPreviousPlayer()
+void HumanInspector::moveToPreviousHuman()
 {
-    std::vector<Player>& players = Player::getPlayers();
+    std::vector<Human>& humans = Human::getHumans();
 
-    if (players.empty())
+    if (humans.empty())
     {
         return;
     }
 
-    selectedPlayerIndex--;
+    selectedHumanIndex--;
 
-    if (selectedPlayerIndex < 0)
+    if (selectedHumanIndex < 0)
     {
-        selectedPlayerIndex = static_cast<int>(players.size()) - 1;
+        selectedHumanIndex = static_cast<int>(humans.size()) - 1;
     }
 
-    updateInspectedPlayerId();
+    updateInspectedHumanId();
 }
 
-void PlayerInspector::draw(GameWorld& world)
+void HumanInspector::draw(GameWorld& world)
 {
     if (!window.isOpen())
     {
-        Player::clearInspectedPlayer();
+        Human::clearInspectedHuman();
         return;
     }
 
@@ -242,7 +242,7 @@ void PlayerInspector::draw(GameWorld& world)
 
     if (!window.isOpen())
     {
-        Player::clearInspectedPlayer();
+        Human::clearInspectedHuman();
         return;
     }
 
@@ -250,14 +250,14 @@ void PlayerInspector::draw(GameWorld& world)
 
     drawPanelBackground();
 
-    std::vector<Player>& players = Player::getPlayers();
+    std::vector<Human>& humans = Human::getHumans();
 
-    if (players.empty())
+    if (humans.empty())
     {
-        Player::clearInspectedPlayer();
+        Human::clearInspectedHuman();
 
         drawCenteredText(
-            "No players exist.",
+            "No humans exist.",
             Config::INSPECTOR_WINDOW_WIDTH / 2.0f,
             60.0f,
             24
@@ -267,17 +267,17 @@ void PlayerInspector::draw(GameWorld& world)
         return;
     }
 
-    if (selectedPlayerIndex >= static_cast<int>(players.size()))
+    if (selectedHumanIndex >= static_cast<int>(humans.size()))
     {
-        selectedPlayerIndex = 0;
+        selectedHumanIndex = 0;
     }
 
-    const Player& player = players[selectedPlayerIndex];
+    const Human& human = humans[selectedHumanIndex];
 
-    Player::setInspectedPlayerId(player.getId());
+    Human::setInspectedHumanId(human.getId());
 
-    drawVision(player, world);
-    drawInventory(player);
+    drawVision(human, world);
+    drawInventory(human);
 
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
@@ -287,12 +287,12 @@ void PlayerInspector::draw(GameWorld& world)
     float neuralY = 345.0f;
 
     drawNeuralNetworkBox(neuralX, neuralY, neuralWidth, neuralHeight);
-    drawStats(player);
+    drawStats(human);
 
     window.display();
 }
 
-void PlayerInspector::drawInventory(const Player& player)
+void HumanInspector::drawInventory(const Human& human)
 {
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
@@ -311,7 +311,7 @@ void PlayerInspector::drawInventory(const Player& player)
 
     drawCenteredText("Inventory", centerX, startY, 18);
 
-    const std::vector<TileType>& inventory = player.getInventory();
+    const std::vector<TileType>& inventory = human.getInventory();
 
     for (int i = 0; i < slotCount; ++i)
     {
@@ -339,7 +339,7 @@ void PlayerInspector::drawInventory(const Player& player)
     }
 }
 
-void PlayerInspector::drawPanelBackground()
+void HumanInspector::drawPanelBackground()
 {
     sf::RectangleShape panel;
 
@@ -358,18 +358,18 @@ void PlayerInspector::drawPanelBackground()
     window.draw(panel);
 }
 
-void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
+void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 {
     int tileSize = Config::INSPECTOR_VIEW_TILE_SIZE;
 
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
-    int playerDrawX = static_cast<int>(centerX - tileSize / 2.0f);
-    int playerDrawY = 250;
+    int humanDrawX = static_cast<int>(centerX - tileSize / 2.0f);
+    int humanDrawY = 250;
 
-    drawCenteredText("Player View", centerX, 55.0f, 22);
+    drawCenteredText("Human View", centerX, 55.0f, 22);
 
-    std::vector<VisibleTile> visibleTiles = player.getVisibleTiles(world);
+    std::vector<VisibleTile> visibleTiles = human.getVisibleTiles(world);
 
     for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
     {
@@ -377,8 +377,8 @@ void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
 
         for (int side = -sideLimit; side <= sideLimit; ++side)
         {
-            int drawX = playerDrawX + side * tileSize;
-            int drawY = playerDrawY - forward * tileSize;
+            int drawX = humanDrawX + side * tileSize;
+            int drawY = humanDrawY - forward * tileSize;
 
             sf::RectangleShape square;
             square.setSize(sf::Vector2f(tileSize - 2.0f, tileSize - 2.0f));
@@ -393,8 +393,8 @@ void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
 
     for (const auto& tile : visibleTiles)
     {
-        int drawX = playerDrawX + tile.side * tileSize;
-        int drawY = playerDrawY - tile.forward * tileSize;
+        int drawX = humanDrawX + tile.side * tileSize;
+        int drawY = humanDrawY - tile.forward * tileSize;
 
         sf::RectangleShape square;
         square.setSize(sf::Vector2f(tileSize - 2.0f, tileSize - 2.0f));
@@ -406,17 +406,17 @@ void PlayerInspector::drawVision(const Player& player, const GameWorld& world)
         window.draw(square);
     }
 
-    sf::RectangleShape playerSquare;
-    playerSquare.setSize(sf::Vector2f(tileSize, tileSize));
-    playerSquare.setPosition(playerDrawX, playerDrawY);
-    playerSquare.setFillColor(sf::Color::White);
-    playerSquare.setOutlineColor(sf::Color::Black);
-    playerSquare.setOutlineThickness(2);
+    sf::RectangleShape humanSquare;
+    humanSquare.setSize(sf::Vector2f(tileSize, tileSize));
+    humanSquare.setPosition(humanDrawX, humanDrawY);
+    humanSquare.setFillColor(sf::Color::White);
+    humanSquare.setOutlineColor(sf::Color::Black);
+    humanSquare.setOutlineThickness(2);
 
-    window.draw(playerSquare);
+    window.draw(humanSquare);
 }
 
-void PlayerInspector::drawStats(const Player& player)
+void HumanInspector::drawStats(const Human& human)
 {
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
@@ -429,55 +429,55 @@ void PlayerInspector::drawStats(const Player& player)
     unsigned int statTextSize = 18;
 
     drawText(
-        "Player ID: " + std::to_string(player.getId()),
+        "Human ID: " + std::to_string(human.getId()),
         leftX,
         y,
         statTextSize
     );
 
     drawText(
-        "Age: " + std::to_string(player.getAge()),
+        "Age: " + std::to_string(human.getAge()),
         leftX,
         y + spacing,
         statTextSize
     );
 
     drawText(
-        "Health: " + std::to_string(player.getHealth()),
+        "Health: " + std::to_string(human.getHealth()),
         leftX,
         y + spacing * 2.0f,
         statTextSize
     );
 
     drawText(
-        "Thirst: " + std::to_string(player.getThirst()),
+        "Thirst: " + std::to_string(human.getThirst()),
         leftX,
         y + spacing * 3.0f,
         statTextSize
     );
 
     drawText(
-        "Hunger: " + std::to_string(player.getHunger()),
+        "Hunger: " + std::to_string(human.getHunger()),
         rightX,
         y,
         statTextSize
     );
 
     drawText(
-        "Gender: " + player.getGenderString(),
+        "Gender: " + human.getGenderString(),
         rightX,
         y + spacing,
         statTextSize
     );
 
     drawText(
-        "Orientation: " + player.getOrientationString(),
+        "Orientation: " + human.getOrientationString(),
         rightX,
         y + spacing * 2.0f,
         statTextSize
     );
 
-    std::string status = player.isDead() ? "Dead" : "Alive";
+    std::string status = human.isDead() ? "Dead" : "Alive";
 
     drawText(
         "Status: " + status,
@@ -487,7 +487,7 @@ void PlayerInspector::drawStats(const Player& player)
     );
 }
 
-void PlayerInspector::drawNeuralNetworkBox(
+void HumanInspector::drawNeuralNetworkBox(
     float x,
     float y,
     float width,
@@ -506,7 +506,7 @@ void PlayerInspector::drawNeuralNetworkBox(
     drawText("Neural Network", x + 12.0f, y + 10.0f, 16);
 }
 
-void PlayerInspector::drawText(
+void HumanInspector::drawText(
     const std::string& text,
     float x,
     float y,
@@ -528,7 +528,7 @@ void PlayerInspector::drawText(
     window.draw(label);
 }
 
-void PlayerInspector::drawCenteredText(
+void HumanInspector::drawCenteredText(
     const std::string& text,
     float centerX,
     float y,
@@ -558,7 +558,7 @@ void PlayerInspector::drawCenteredText(
     window.draw(label);
 }
 
-sf::Color PlayerInspector::getColorFromTile(TileType tile) const
+sf::Color HumanInspector::getColorFromTile(TileType tile) const
 {
     sf::Color color;
 

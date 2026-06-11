@@ -2,7 +2,7 @@
 #include "core/config.h"
 #include "core/daynight.h"
 #include "core/weather.h"
-#include "entities/player.h"
+#include "entities/human.h"
 #include "entities/predator.h"
 #include "terrain/lake.h"
 #include "resources/food.h"
@@ -143,14 +143,14 @@ void SimulationStats::drawStatsText()
     unsigned int size = 18;
 
     drawText(
-        "Humans Alive: " + std::to_string(Player::countAlive()),
+        "Humans Alive: " + std::to_string(Human::countAlive()),
         leftX,
         topY,
         size
     );
 
     drawText(
-        "Humans Dead: " + std::to_string(Player::countDead()),
+        "Humans Dead: " + std::to_string(Human::countDead()),
         leftX,
         topY + spacing,
         size

@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "core/gameworld.h"
-#include "entities/player.h"
+#include "entities/human.h"
 
 enum class PredatorType
 {
