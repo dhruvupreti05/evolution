@@ -1,5 +1,5 @@
 #include "player.h"
-#include "config.h"
+#include "core/config.h"
 
 #include <cstdlib>
 #include <set>

@@ -2,12 +2,12 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "config.h"
-#include "gameworld.h"
-#include "player.h"
-#include "lake.h"
-#include "food.h"
-#include "playerinspector.h"
+#include "core/config.h"
+#include "core/gameworld.h"
+#include "entities/player.h"
+#include "terrain/lake.h"
+#include "resources/food.h"
+#include "ui/playerinspector.h"
 
 int main()
 {

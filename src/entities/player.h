@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "gameworld.h"
+#include "core/gameworld.h"
 
 enum class Direction
 {

@@ -3,8 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-#include "gameworld.h"
-#include "player.h"
+#include "core/gameworld.h"
+#include "entities/player.h"
 
 class PlayerInspector
 {

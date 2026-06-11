@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "clumps.h"
-#include "gameworld.h"
+#include "core/gameworld.h"
 
 class Lake : public Clump
 {

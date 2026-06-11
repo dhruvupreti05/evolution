@@ -1,5 +1,5 @@
 #include "playerinspector.h"
-#include "config.h"
+#include "core/config.h"
 
 #include <vector>
 #include <string>

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "gameworld.h"
+#include "core/gameworld.h"
 
 struct FoodPosition
 {
