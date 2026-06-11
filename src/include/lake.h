@@ -2,6 +2,7 @@
 
 #include <set>
 #include <vector>
+#include <cmath>
 
 #include "clumps.h"
 #include "gameworld.h"

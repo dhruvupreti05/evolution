@@ -1,6 +1,8 @@
 #include "gameworld.h"
 #include "config.h"
 
+#include <cmath>
+
 GameWorld::GameWorld(
     int windowWidth,
     int windowHeight,
@@ -117,6 +119,21 @@ void GameWorld::drawTile(int x, int y, TileType type)
     window.draw(square);
 }
 
+void GameWorld::drawTile(int x, int y, sf::Color color)
+{
+    if (!isInsideGrid(x, y))
+    {
+        return;
+    }
+
+    sf::RectangleShape square;
+    square.setSize(sf::Vector2f(cellSize, cellSize));
+    square.setPosition(x * cellSize, y * cellSize);
+    square.setFillColor(color);
+
+    window.draw(square);
+}
+
 void GameWorld::drawGrid()
 {
     sf::VertexArray lines(sf::Lines);
@@ -153,4 +170,50 @@ void GameWorld::drawGrid()
     }
 
     window.draw(lines);
+}
+
+void GameWorld::drawTileOutline(int x, int y, sf::Color color, float thickness)
+{
+    if (!isInsideGrid(x, y))
+    {
+        return;
+    }
+
+    sf::RectangleShape square;
+    square.setSize(sf::Vector2f(cellSize, cellSize));
+    square.setPosition(x * cellSize, y * cellSize);
+
+    square.setFillColor(sf::Color::Transparent);
+    square.setOutlineColor(color);
+    square.setOutlineThickness(thickness);
+
+    window.draw(square);
+}
+
+void GameWorld::drawLine(
+    float x1,
+    float y1,
+    float x2,
+    float y2,
+    sf::Color color,
+    float thickness
+)
+{
+    sf::Vector2f direction(x2 - x1, y2 - y1);
+    float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+
+    if (length == 0.0f)
+    {
+        return;
+    }
+
+    sf::RectangleShape line;
+    line.setSize(sf::Vector2f(length, thickness));
+    line.setFillColor(color);
+    line.setPosition(x1, y1);
+
+    float angle = std::atan2(direction.y, direction.x) * 180.0f / 3.14159265f;
+    line.setRotation(angle);
+
+    window.draw(line);
 }

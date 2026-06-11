@@ -67,19 +67,26 @@ void Clump::generate()
 
         std::vector<GridPos> neighbors = getNeighbors(current);
 
-        if (neighbors.empty())
+        std::vector<GridPos> validNeighbors;
+
+        for (const auto& neighbor : neighbors)
+        {
+            if (cells.count(neighbor) == 0)
+            {
+                validNeighbors.push_back(neighbor);
+            }
+        }
+
+        if (validNeighbors.empty())
         {
             frontier.erase(frontier.begin() + index);
             continue;
         }
 
-        GridPos chosen = neighbors[rand() % neighbors.size()];
+        GridPos chosen = validNeighbors[rand() % validNeighbors.size()];
 
-        if (cells.count(chosen) == 0)
-        {
-            cells.insert(chosen);
-            frontier.push_back(chosen);
-        }
+        cells.insert(chosen);
+        frontier.push_back(chosen);
     }
 
     fillHoles();

@@ -23,12 +23,16 @@ public:
     bool isInsideGrid(int x, int y) const;
 
     void drawTile(int x, int y, TileType type);
+    void drawTile(int x, int y, sf::Color color);
+    void drawTileOutline(int x, int y, sf::Color color, float thickness = 1.0f);
     void drawGrid();
 
     sf::RenderWindow& getWindow();
 
     int getGridSize() const;
     int getCellSize() const;
+
+    void drawLine(float x1, float y1, float x2, float y2, sf::Color color, float thickness = 2.0f);
 
 private:
     sf::RenderWindow window;

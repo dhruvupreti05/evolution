@@ -13,10 +13,39 @@ Lake::Lake(int centerX, int centerY, int numWaterBlocks, int gridSize)
 
 void Lake::init(GameWorld& world)
 {
-    for (int i = 0; i < Config::NUM_LAKES; ++i)
+    int gridSize = world.getGridSize();
+    int buffer = Config::LAKE_SPAWN_BOUNDARY_BUFFER;
+
+    int usableMin = buffer;
+    int usableMax = gridSize - buffer - 1;
+    int usableSize = usableMax - usableMin + 1;
+
+    if (usableSize <= 0)
     {
-        int gridX = rand() % world.getGridSize();
-        int gridY = rand() % world.getGridSize();
+        return;
+    }
+
+    int numLakes = Config::NUM_LAKES;
+
+    int columns = static_cast<int>(std::ceil(std::sqrt(numLakes)));
+    int rows = static_cast<int>(std::ceil(static_cast<double>(numLakes) / columns));
+
+    for (int i = 0; i < numLakes; ++i)
+    {
+        int row = i / columns;
+        int col = i % columns;
+
+        int regionXStart = (col * usableSize) / columns;
+        int regionXEnd = ((col + 1) * usableSize) / columns - 1;
+
+        int regionYStart = (row * usableSize) / rows;
+        int regionYEnd = ((row + 1) * usableSize) / rows - 1;
+
+        int regionWidth = regionXEnd - regionXStart + 1;
+        int regionHeight = regionYEnd - regionYStart + 1;
+
+        int gridX = usableMin + regionXStart + rand() % regionWidth;
+        int gridY = usableMin + regionYStart + rand() % regionHeight;
 
         int numWaterBlocks =
             rand() % Config::LAKE_BLOCK_RANGE + Config::MIN_LAKE_BLOCKS;

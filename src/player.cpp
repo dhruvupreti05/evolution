@@ -2,11 +2,22 @@
 #include "config.h"
 
 #include <cstdlib>
+#include <set>
+#include <utility>
 
 std::vector<Player> Player::players;
+int Player::nextId = 0;
+int Player::inspectedPlayerId = -1;
 
 Player::Player(int gridX, int gridY)
-    : x(gridX), y(gridY)
+    : x(gridX),
+      y(gridY),
+      health(Config::HUMAN_START_HEALTH + rand() % 20),
+      thirst(Config::HUMAN_START_THIRST + rand() % 20),
+      hunger(Config::HUMAN_START_HUNGER + rand() % 20),
+      age(0),
+      gender((rand() % 2 == 0) ? Gender::Male : Gender::Female),
+      id(nextId++)
 {
 }
 
@@ -14,10 +25,66 @@ void Player::init(GameWorld& world)
 {
     for (int i = 0; i < Config::NUM_PLAYERS; ++i)
     {
-        int gridX = rand() % world.getGridSize();
-        int gridY = rand() % world.getGridSize();
+        int gridX;
+        int gridY;
+
+        do
+        {
+            gridX = rand() % world.getGridSize();
+            gridY = rand() % world.getGridSize();
+        }
+        while (world.getTile(gridX, gridY) == TileType::Water);
 
         players.emplace_back(gridX, gridY);
+    }
+}
+
+void Player::update(GameWorld& world)
+{
+    if (dead)
+    {
+        return;
+    }
+
+    decayStats();
+    checkDeath();
+
+    if (dead)
+    {
+        return;
+    }
+
+    moveRandomly(world);
+}
+
+void Player::decayStats()
+{
+    health -= Config::HUMAN_HEALTH_DECAY;
+    thirst -= Config::HUMAN_THIRST_DECAY;
+    hunger -= Config::HUMAN_HUNGER_DECAY;
+    age += Config::HUMAN_AGE_INCREASE;
+
+    if (health < 0)
+    {
+        health = 0;
+    }
+
+    if (thirst < 0)
+    {
+        thirst = 0;
+    }
+
+    if (hunger < 0)
+    {
+        hunger = 0;
+    }
+}
+
+void Player::checkDeath()
+{
+    if (health <= 0 || thirst <= 0 || hunger <= 0)
+    {
+        dead = true;
     }
 }
 
@@ -31,6 +98,18 @@ void Player::recordMoveAttempt(MoveAttempt attempt)
     {
         moveMemoryCount++;
     }
+}
+
+MoveAttempt Player::getPreviousMove() const
+{
+    int previousIndex = moveMemoryIndex - 1;
+
+    if (previousIndex < 0)
+    {
+        previousIndex = MOVE_MEMORY_SIZE - 1;
+    }
+
+    return previousMoves[previousIndex];
 }
 
 Direction Player::getRandomDirection() const
@@ -88,8 +167,44 @@ void Player::directionToDelta(Direction direction, int& dx, int& dy) const
     }
 }
 
+void Player::updateOrientation(Direction direction)
+{
+    switch (direction)
+    {
+        case Direction::Up:
+            orientation = Orientation::North;
+            break;
+
+        case Direction::Down:
+            orientation = Orientation::South;
+            break;
+
+        case Direction::Left:
+            orientation = Orientation::West;
+            break;
+
+        case Direction::Right:
+            orientation = Orientation::East;
+            break;
+
+        case Direction::Stay:
+        default:
+            break;
+    }
+}
+
 void Player::move(Direction direction, GameWorld& world)
 {
+    if (dead)
+    {
+        return;
+    }
+
+    if (direction != Direction::Stay)
+    {
+        updateOrientation(direction);
+    }
+
     int dx;
     int dy;
 
@@ -105,9 +220,6 @@ void Player::move(Direction direction, GameWorld& world)
 
     if (!world.isInsideGrid(newX, newY))
     {
-        pendingWaterDirection = Direction::Stay;
-        pendingWaterAttempts = 0;
-
         recordMoveAttempt(attempt);
         return;
     }
@@ -117,9 +229,6 @@ void Player::move(Direction direction, GameWorld& world)
 
     if (direction == Direction::Stay)
     {
-        pendingWaterDirection = Direction::Stay;
-        pendingWaterAttempts = 0;
-
         attempt.succeeded = true;
         recordMoveAttempt(attempt);
         return;
@@ -127,23 +236,22 @@ void Player::move(Direction direction, GameWorld& world)
 
     if (tile == TileType::Water)
     {
-        if (pendingWaterDirection == direction)
+        bool shouldMoveThroughWater = false;
+
+        if (moveMemoryCount > 0)
         {
-            pendingWaterAttempts++;
-        }
-        else
-        {
-            pendingWaterDirection = direction;
-            pendingWaterAttempts = 1;
+            MoveAttempt previousMove = getPreviousMove();
+
+            shouldMoveThroughWater =
+                previousMove.direction == direction &&
+                previousMove.tile == TileType::Water &&
+                previousMove.succeeded == false;
         }
 
-        if (pendingWaterAttempts >= 2)
+        if (shouldMoveThroughWater)
         {
             x = newX;
             y = newY;
-
-            pendingWaterDirection = Direction::Stay;
-            pendingWaterAttempts = 0;
 
             attempt.succeeded = true;
         }
@@ -151,9 +259,6 @@ void Player::move(Direction direction, GameWorld& world)
         recordMoveAttempt(attempt);
         return;
     }
-
-    pendingWaterDirection = Direction::Stay;
-    pendingWaterAttempts = 0;
 
     x = newX;
     y = newY;
@@ -169,9 +274,129 @@ void Player::moveRandomly(GameWorld& world)
     move(direction, world);
 }
 
+void Player::orientationToBasis(
+    int& forwardDx,
+    int& forwardDy,
+    int& rightDx,
+    int& rightDy
+) const
+{
+    forwardDx = 0;
+    forwardDy = 0;
+    rightDx = 0;
+    rightDy = 0;
+
+    switch (orientation)
+    {
+        case Orientation::North:
+            forwardDx = 0;
+            forwardDy = -1;
+            rightDx = 1;
+            rightDy = 0;
+            break;
+
+        case Orientation::South:
+            forwardDx = 0;
+            forwardDy = 1;
+            rightDx = -1;
+            rightDy = 0;
+            break;
+
+        case Orientation::East:
+            forwardDx = 1;
+            forwardDy = 0;
+            rightDx = 0;
+            rightDy = 1;
+            break;
+
+        case Orientation::West:
+            forwardDx = -1;
+            forwardDy = 0;
+            rightDx = 0;
+            rightDy = -1;
+            break;
+    }
+}
+
+bool Player::shouldLogVisibleTile(TileType tile) const
+{
+    return tile != TileType::Empty && tile != TileType::Sand;
+}
+
+std::vector<VisibleTile> Player::getVisibleTiles(const GameWorld& world) const
+{
+    std::vector<VisibleTile> visibleTiles;
+
+    if (dead)
+    {
+        return visibleTiles;
+    }
+
+    int forwardDx;
+    int forwardDy;
+    int rightDx;
+    int rightDy;
+
+    orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
+
+    for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
+    {
+        int sideLimit = forward - 1;
+
+        for (int side = -sideLimit; side <= sideLimit; ++side)
+        {
+            int worldX = x + forward * forwardDx + side * rightDx;
+            int worldY = y + forward * forwardDy + side * rightDy;
+
+            if (!world.isInsideGrid(worldX, worldY))
+            {
+                continue;
+            }
+
+            TileType tile = world.getTile(worldX, worldY);
+
+            if (!shouldLogVisibleTile(tile))
+            {
+                continue;
+            }
+
+            visibleTiles.push_back({
+                tile,
+                forward,
+                side,
+                worldX,
+                worldY
+            });
+        }
+    }
+
+    return visibleTiles;
+}
+
 void Player::draw(GameWorld& world) const
 {
-    world.drawTile(x, y, TileType::Human);
+    if (dead)
+    {
+        return;
+    }
+
+    if (id == inspectedPlayerId)
+    {
+        drawVisionOutline(world);
+        world.drawTile(x, y, Config::COLOR_SELECTED_HUMAN);
+    }
+    else
+    {
+        world.drawTile(x, y, TileType::Human);
+    }
+}
+
+void Player::updatePlayers(GameWorld& world)
+{
+    for (auto& player : players)
+    {
+        player.update(world);
+    }
 }
 
 void Player::movePlayers(GameWorld& world)
@@ -184,10 +409,38 @@ void Player::movePlayers(GameWorld& world)
 
 void Player::drawPlayers(GameWorld& world)
 {
+    int selectedId = Player::getInspectedPlayerId();
+
     for (const auto& player : players)
     {
-        player.draw(world);
+        if (player.getId() != selectedId)
+        {
+            player.draw(world);
+        }
     }
+
+    for (const auto& player : players)
+    {
+        if (player.getId() == selectedId)
+        {
+            player.draw(world);
+        }
+    }
+}
+
+std::vector<Player>& Player::getPlayers()
+{
+    return players;
+}
+
+void Player::setInspectedPlayerId(int playerId)
+{
+    inspectedPlayerId = playerId;
+}
+
+void Player::clearInspectedPlayer()
+{
+    inspectedPlayerId = -1;
 }
 
 int Player::getX() const
@@ -198,4 +451,170 @@ int Player::getX() const
 int Player::getY() const
 {
     return y;
+}
+
+int Player::getHealth() const
+{
+    return health;
+}
+
+int Player::getThirst() const
+{
+    return thirst;
+}
+
+int Player::getHunger() const
+{
+    return hunger;
+}
+
+int Player::getAge() const
+{
+    return age;
+}
+
+int Player::getId() const
+{
+    return id;
+}
+
+Gender Player::getGender() const
+{
+    return gender;
+}
+
+Orientation Player::getOrientation() const
+{
+    return orientation;
+}
+
+std::string Player::getGenderString() const
+{
+    switch (gender)
+    {
+        case Gender::Male:
+            return "Male";
+
+        case Gender::Female:
+            return "Female";
+
+        default:
+            return "Unknown";
+    }
+}
+
+std::string Player::getOrientationString() const
+{
+    switch (orientation)
+    {
+        case Orientation::North:
+            return "North";
+
+        case Orientation::South:
+            return "South";
+
+        case Orientation::East:
+            return "East";
+
+        case Orientation::West:
+            return "West";
+
+        default:
+            return "Unknown";
+    }
+}
+
+bool Player::isDead() const
+{
+    return dead;
+}
+
+int Player::getInspectedPlayerId()
+{
+    return inspectedPlayerId;
+}
+
+void Player::drawVisionOutline(GameWorld& world) const
+{
+    if (dead)
+    {
+        return;
+    }
+
+    int forwardDx;
+    int forwardDy;
+    int rightDx;
+    int rightDy;
+
+    orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
+
+    std::set<std::pair<int, int>> visionCells;
+
+    for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
+    {
+        int sideLimit = forward - 1;
+
+        for (int side = -sideLimit; side <= sideLimit; ++side)
+        {
+            int worldX = x + forward * forwardDx + side * rightDx;
+            int worldY = y + forward * forwardDy + side * rightDy;
+
+            if (!world.isInsideGrid(worldX, worldY))
+            {
+                continue;
+            }
+
+            visionCells.insert({worldX, worldY});
+        }
+    }
+
+    float cellSize = static_cast<float>(world.getCellSize());
+
+    for (const auto& cell : visionCells)
+    {
+        int gx = cell.first;
+        int gy = cell.second;
+
+        bool hasUp    = visionCells.count({gx, gy - 1}) > 0;
+        bool hasDown  = visionCells.count({gx, gy + 1}) > 0;
+        bool hasLeft  = visionCells.count({gx - 1, gy}) > 0;
+        bool hasRight = visionCells.count({gx + 1, gy}) > 0;
+
+        float px = gx * cellSize;
+        float py = gy * cellSize;
+
+        if (!hasUp)
+        {
+            world.drawLine(px, py, px + cellSize, py, sf::Color::Black, 2.0f);
+        }
+
+        if (!hasDown)
+        {
+            world.drawLine(
+                px,
+                py + cellSize,
+                px + cellSize,
+                py + cellSize,
+                sf::Color::Black,
+                2.0f
+            );
+        }
+
+        if (!hasLeft)
+        {
+            world.drawLine(px, py, px, py + cellSize, sf::Color::Black, 2.0f);
+        }
+
+        if (!hasRight)
+        {
+            world.drawLine(
+                px + cellSize,
+                py,
+                px + cellSize,
+                py + cellSize,
+                sf::Color::Black,
+                2.0f
+            );
+        }
+    }
 }

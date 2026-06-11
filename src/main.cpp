@@ -6,6 +6,7 @@
 #include "gameworld.h"
 #include "player.h"
 #include "lake.h"
+#include "playerinspector.h"
 
 int main()
 {
@@ -19,8 +20,12 @@ int main()
         "Evolution Simulation"
     );
 
-    Player::init(world);
+    PlayerInspector inspector;
+
     Lake::init(world);
+    Player::init(world);
+
+    bool paused = false;
 
     while (world.isOpen())
     {
@@ -32,9 +37,27 @@ int main()
             {
                 world.getWindow().close();
             }
+
+            if (event.type == sf::Event::KeyPressed)
+            {
+                if (event.key.code == sf::Keyboard::Q)
+                {
+                    inspector.open();
+                }
+
+                if (event.key.code == sf::Keyboard::P)
+                {
+                    paused = !paused;
+                }
+            }
         }
 
-        Player::movePlayers(world);
+        if (!paused)
+        {
+            Player::updatePlayers(world);
+        }
+
+        inspector.draw(world);
 
         world.clear();
 
