@@ -105,7 +105,7 @@ sf::Color GameWorld::getColorFromTile(TileType type) const
             color = Config::COLOR_TREE;
             break;
 
-        case TileType::Food:
+        case TileType::Crop:
             color = Config::COLOR_FOOD;
             break;
 

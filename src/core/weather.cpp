@@ -3,7 +3,7 @@
 #include "core/config.h"
 #include "core/daynight.h"
 #include "terrain/lake.h"
-#include "resources/food.h"
+#include "resources/crop.h"
 #include "entities/predator.h"
 
 #include <cstdlib>
@@ -38,7 +38,7 @@ void Weather::update(GameWorld& world)
 
 void Weather::triggerFlood(GameWorld& world)
 {
-    Food::clearAll(world);
+    Crop::clearAll(world);
     Lake::floodAll(world, Config::WEATHER_FLOOD_LAYERS);
 
     activeEvent = WeatherEvent::Flood;
@@ -47,7 +47,7 @@ void Weather::triggerFlood(GameWorld& world)
 
 void Weather::triggerDrought(GameWorld& world)
 {
-    Food::clearAll(world);
+    Crop::clearAll(world);
     Lake::dryAll(world, Config::WEATHER_DROUGHT_LAYERS);
 
     Predator::killWaterPredatorsNotOnWater(world);

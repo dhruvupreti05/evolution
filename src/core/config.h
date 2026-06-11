@@ -62,7 +62,7 @@ namespace Config
     constexpr int INSPECTOR_VIEW_TOP_MARGIN = 40;
     constexpr int INSPECTOR_STATS_START_Y = 330;
 
-    // Food settings
+    // Crop settings
     constexpr int FOOD_SPAWN_ATTEMPTS_PER_TICK = 100;
     constexpr int FOOD_SPAWN_CHANCE_PERCENT = 50;
 
@@ -73,10 +73,9 @@ namespace Config
     // Body settings
     constexpr int TICKS_PER_DEAD_BODY = 300;
     constexpr int TICKS_PER_DEAD_PREDATOR = 300;
-    constexpr int TICKS_PER_MEAL_HUMAN = 10;
 
     // Predator settings
-    constexpr int NUMBER_OF_LAND_PREDATORS = 0;
+    constexpr int NUMBER_OF_LAND_PREDATORS = 10;
     constexpr int NUMBER_OF_WATER_PREDATORS = 50;
 
     constexpr int PREDATOR_START_HEALTH = 1000;
@@ -90,7 +89,8 @@ namespace Config
     constexpr int PREDATOR_THIRST_MODE_THRESHOLD = 500;
 
     constexpr int HEALTH_PER_PREDATOR_ATTACK = 500;
-    constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20;
+    constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20; // how much a predator’s hunger stat increases each tick while eating a dead human body
+    constexpr int TICKS_PER_MEAL_HUMAN = 10; // How many ticks
     constexpr int PREDATOR_THIRST_PER_WATER_BLOCK = 200;
 
     constexpr int WEATHER_MIN_DAYS_BETWEEN = 1;

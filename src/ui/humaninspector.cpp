@@ -572,7 +572,7 @@ sf::Color HumanInspector::getColorFromTile(TileType tile) const
             color = Config::COLOR_TREE;
             break;
 
-        case TileType::Food:
+        case TileType::Crop:
             color = Config::COLOR_FOOD;
             break;
 

@@ -5,7 +5,7 @@
 #include "entities/human.h"
 #include "entities/predator.h"
 #include "terrain/lake.h"
-#include "resources/food.h"
+#include "resources/crop.h"
 #include "core/paths.h"
 
 #include <algorithm>
@@ -192,7 +192,7 @@ void SimulationStats::drawStatsText()
     );
 
     drawText(
-        "Food Blocks: " + std::to_string(Food::getCount()),
+        "Crop Blocks: " + std::to_string(Crop::getCount()),
         rightX,
         topY + spacing * 2.0f,
         size

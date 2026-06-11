@@ -6,7 +6,7 @@
 #include "core/gameworld.h"
 #include "entities/human.h"
 #include "terrain/lake.h"
-#include "resources/food.h"
+#include "resources/crop.h"
 #include "ui/humaninspector.h"
 #include "core/daynight.h"
 #include "entities/predator.h"
@@ -76,7 +76,7 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
 
             Human::updateHumans(world);
             Predator::updatePredators(world);
-            Food::update(world);
+            Crop::update(world);
 
             Weather::update(world);
         }
@@ -86,7 +86,7 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
         world.clear();
 
         Lake::drawLakes(world);
-        Food::drawFoods(world);
+        Crop::drawCrops(world);
 
         Human::drawBodies(world);
         Predator::drawBodies(world);

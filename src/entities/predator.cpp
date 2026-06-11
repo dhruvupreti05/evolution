@@ -34,7 +34,7 @@ namespace
                 continue;
             }
 
-            if (tile == TileType::Food)
+            if (tile == TileType::Crop)
             {
                 continue;
             }

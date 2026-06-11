@@ -1,7 +1,7 @@
 #include "human.h"
 #include "core/config.h"
 #include "terrain/lake.h"
-#include "resources/food.h"
+#include "resources/crop.h"
 #include "entities/predator.h"
 
 #include <cstdlib>
@@ -426,7 +426,7 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
 
     orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
 
-    // First: see world tiles like water, food, trees, etc.
+    // First: see world tiles like water, crop, trees, etc.
     for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
     {
         int sideLimit = forward - 1;
@@ -822,7 +822,7 @@ void Human::getFacingCell(int& targetX, int& targetY) const
 
 bool Human::canPickUp(TileType tile) const
 {
-    return tile == TileType::Water || tile == TileType::Food;
+    return tile == TileType::Water || tile == TileType::Crop;
 }
 
 bool Human::canDropOn(TileType tile, int targetX, int targetY) const
@@ -868,11 +868,11 @@ bool Human::tryPickUp(GameWorld& world)
         return false;
     }
 
-    if (tile == TileType::Food)
+    if (tile == TileType::Crop)
     {
-        Food::removeFoodAt(targetX, targetY);
+        Crop::removeCropAt(targetX, targetY);
         world.setTile(targetX, targetY, TileType::Empty);
-        inventory.push_back(TileType::Food);
+        inventory.push_back(TileType::Crop);
         return true;
     }
 
@@ -922,10 +922,10 @@ bool Human::tryDrop(GameWorld& world)
 
     TileType item = inventory.back();
 
-    if (item == TileType::Food)
+    if (item == TileType::Crop)
     {
-        world.setTile(targetX, targetY, TileType::Food);
-        Food::addFoodAt(targetX, targetY);
+        world.setTile(targetX, targetY, TileType::Crop);
+        Crop::addCropAt(targetX, targetY);
         inventory.pop_back();
         return true;
     }
