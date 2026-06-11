@@ -68,7 +68,7 @@ namespace Config
 
     // Day/night settings
     constexpr int TICKS_PER_DAY = 300;
-    constexpr int MIDNIGHT_RGB_DECREASE = 150;
+    constexpr int MIDNIGHT_RGB_DECREASE = 50;
 
     // Body settings
     constexpr int TICKS_PER_DEAD_BODY = 300;

@@ -1,6 +1,6 @@
 SRCDIR = ./src
 OBJDIR = ./build
-LIBRARY = /opt/homebrew/Cellar/sfml/2.6.1
+LIBRARY = /opt/homebrew/opt/sfml@2
 
 CC = g++
 CXXFLAGS = -std=c++17 -I $(LIBRARY)/include -I $(SRCDIR)
