@@ -63,9 +63,6 @@ Instead of placing agents into the full complex world immediately, the world slo
 
 ### Inventory
 
-* Add a way for people to pick up items and store them in an inventory.
-* Each person should have an inventory limit of 5 blocks/items.
-* Inventory should be visible in the player inspector view.
 * Eventually, people may be able to pick up water and place it somewhere else to generate their own food.
 * People may also be able to pick up food and feed it to their young.
 
@@ -98,6 +95,10 @@ Instead of placing agents into the full complex world immediately, the world slo
 
 * Add a way for each person to sense statistics about nearby people, resources, predators, and terrain.
 * These nearby statistics should be used as inputs to the neural network.
+
+## Game Viewer
+
+* Add a new window to list current simulation statistics and place to control weather.  
 
 ### Hiding and Terrain Strategy
 

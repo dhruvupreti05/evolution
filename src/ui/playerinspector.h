@@ -5,6 +5,7 @@
 
 #include "core/gameworld.h"
 #include "entities/player.h"
+#include "core/daynight.h"
 
 class PlayerInspector
 {

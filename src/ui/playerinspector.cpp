@@ -560,25 +560,35 @@ void PlayerInspector::drawCenteredText(
 
 sf::Color PlayerInspector::getColorFromTile(TileType tile) const
 {
+    sf::Color color;
+
     switch (tile)
     {
         case TileType::Water:
-            return Config::COLOR_WATER;
+            color = Config::COLOR_WATER;
+            break;
 
         case TileType::Tree:
-            return Config::COLOR_TREE;
+            color = Config::COLOR_TREE;
+            break;
 
         case TileType::Food:
-            return Config::COLOR_FOOD;
+            color = Config::COLOR_FOOD;
+            break;
 
         case TileType::Human:
-            return Config::COLOR_HUMAN;
+            color = Config::COLOR_HUMAN;
+            break;
 
         case TileType::Sand:
-            return Config::COLOR_SAND;
+            color = Config::COLOR_SAND;
+            break;
 
         case TileType::Empty:
         default:
-            return Config::COLOR_BACKGROUND;
+            color = Config::COLOR_BACKGROUND;
+            break;
     }
+
+    return DayNight::apply(color);
 }

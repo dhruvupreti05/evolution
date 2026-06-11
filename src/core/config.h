@@ -63,4 +63,8 @@ namespace Config
     constexpr int FOOD_SPAWN_ATTEMPTS_PER_TICK = 100;
     constexpr int FOOD_SPAWN_CHANCE_PERCENT = 50;
 
+    // Day/night settings
+    constexpr int TICKS_PER_DAY = 300;
+    constexpr int MIDNIGHT_RGB_DECREASE = 150;
+
 }

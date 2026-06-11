@@ -8,6 +8,7 @@
 #include "terrain/lake.h"
 #include "resources/food.h"
 #include "ui/playerinspector.h"
+#include "core/daynight.h"
 
 int main()
 {
@@ -49,6 +50,8 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
 
         if (!paused)
         {
+            DayNight::update();
+            
             Player::updatePlayers(world);
             Food::update(world);
         }

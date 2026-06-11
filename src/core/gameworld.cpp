@@ -1,4 +1,5 @@
 #include "core/gameworld.h"
+#include "core/daynight.h"
 #include "core/config.h"
 
 #include <cmath>
@@ -33,7 +34,7 @@ bool GameWorld::pollEvent(sf::Event& event)
 
 void GameWorld::clear()
 {
-    window.clear(Config::COLOR_BACKGROUND);
+    window.clear(DayNight::apply(Config::COLOR_BACKGROUND));
 }
 
 void GameWorld::display()
@@ -88,27 +89,37 @@ int GameWorld::getCellSize() const
 
 sf::Color GameWorld::getColorFromTile(TileType type) const
 {
+    sf::Color color;
+
     switch (type)
     {
         case TileType::Water:
-            return Config::COLOR_WATER;
+            color = Config::COLOR_WATER;
+            break;
 
         case TileType::Sand:
-            return Config::COLOR_SAND;
+            color = Config::COLOR_SAND;
+            break;
 
         case TileType::Tree:
-            return Config::COLOR_TREE;
+            color = Config::COLOR_TREE;
+            break;
 
         case TileType::Food:
-            return Config::COLOR_FOOD;
+            color = Config::COLOR_FOOD;
+            break;
 
         case TileType::Human:
-            return Config::COLOR_HUMAN;
+            color = Config::COLOR_HUMAN;
+            break;
 
         case TileType::Empty:
         default:
-            return Config::COLOR_BACKGROUND;
+            color = Config::COLOR_BACKGROUND;
+            break;
     }
+
+    return DayNight::apply(color);
 }
 
 void GameWorld::drawTile(int x, int y, TileType type)
@@ -136,7 +147,7 @@ void GameWorld::drawTile(int x, int y, sf::Color color)
     sf::RectangleShape square;
     square.setSize(sf::Vector2f(cellSize, cellSize));
     square.setPosition(x * cellSize, y * cellSize);
-    square.setFillColor(color);
+    square.setFillColor(DayNight::apply(color));
 
     window.draw(square);
 }
