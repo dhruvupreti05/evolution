@@ -15,8 +15,8 @@ void Food::update(GameWorld& world)
 
 void Food::trySpawnFood(GameWorld& world)
 {
-    int x = rand() % world.getGridSize();
-    int y = rand() % world.getGridSize();
+    int x = rand() % world.getGridWidth();
+    int y = rand() % world.getGridHeight();
 
     if (world.getTile(x, y) != TileType::Sand)
     {

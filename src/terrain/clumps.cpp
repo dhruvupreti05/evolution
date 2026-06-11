@@ -1,14 +1,21 @@
-#include "clumps.h"
+#include "terrain/clumps.h"
 
 #include <cstdlib>
 #include <queue>
 #include <algorithm>
 
-Clump::Clump(int centerX, int centerY, int numBlocks, int gridSize)
+Clump::Clump(
+    int centerX,
+    int centerY,
+    int numBlocks,
+    int gridWidth,
+    int gridHeight
+)
     : centerX(centerX),
       centerY(centerY),
       numBlocks(numBlocks),
-      gridSize(gridSize)
+      gridWidth(gridWidth),
+      gridHeight(gridHeight)
 {
     generate();
 }
@@ -34,7 +41,7 @@ std::vector<GridPos> Clump::getNeighbors(const GridPos& pos) const
         int nx = pos.x + dir.x;
         int ny = pos.y + dir.y;
 
-        if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize)
+        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight)
         {
             neighbors.push_back({nx, ny});
         }
@@ -50,7 +57,12 @@ void Clump::generate()
         return;
     }
 
-    if (centerX < 0 || centerX >= gridSize || centerY < 0 || centerY >= gridSize)
+    if (
+        centerX < 0 ||
+        centerX >= gridWidth ||
+        centerY < 0 ||
+        centerY >= gridHeight
+    )
     {
         return;
     }
@@ -60,13 +72,12 @@ void Clump::generate()
     std::vector<GridPos> frontier;
     frontier.push_back({centerX, centerY});
 
-    while ((int)cells.size() < numBlocks && !frontier.empty())
+    while (static_cast<int>(cells.size()) < numBlocks && !frontier.empty())
     {
         int index = rand() % frontier.size();
         GridPos current = frontier[index];
 
         std::vector<GridPos> neighbors = getNeighbors(current);
-
         std::vector<GridPos> validNeighbors;
 
         for (const auto& neighbor : neighbors)
@@ -99,9 +110,9 @@ void Clump::fillHoles()
         return;
     }
 
-    int minX = gridSize;
+    int minX = gridWidth;
     int maxX = 0;
-    int minY = gridSize;
+    int minY = gridHeight;
     int maxY = 0;
 
     for (const auto& cell : cells)
@@ -113,11 +124,11 @@ void Clump::fillHoles()
     }
 
     // Add a 1-cell margin around the bounding box.
-    // This gives the flood-fill an "outside" area to start from.
+    // This gives the flood-fill an outside area to start from.
     minX = std::max(0, minX - 1);
-    maxX = std::min(gridSize - 1, maxX + 1);
+    maxX = std::min(gridWidth - 1, maxX + 1);
     minY = std::max(0, minY - 1);
-    maxY = std::min(gridSize - 1, maxY + 1);
+    maxY = std::min(gridHeight - 1, maxY + 1);
 
     std::set<GridPos> outside;
     std::queue<GridPos> queue;
@@ -179,7 +190,7 @@ void Clump::fillHoles()
         }
     }
 
-    // Any empty cell inside the bounding box that was NOT reached
+    // Any empty cell inside the bounding box that was not reached
     // by the outside flood-fill is an enclosed hole.
     for (int y = minY; y <= maxY; ++y)
     {

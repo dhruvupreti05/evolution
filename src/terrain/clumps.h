@@ -22,7 +22,7 @@ struct GridPos
 class Clump
 {
 public:
-    Clump(int centerX, int centerY, int numBlocks, int gridSize);
+    Clump(int centerX, int centerY, int numBlocks, int gridWidth, int gridHeight);
 
     const std::set<GridPos>& getCells() const;
 
@@ -33,7 +33,9 @@ private:
     int centerX;
     int centerY;
     int numBlocks;
-    int gridSize;
+    
+    int gridWidth;
+    int gridHeight;
 
     void generate();
     void fillHoles();

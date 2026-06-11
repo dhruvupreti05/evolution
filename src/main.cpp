@@ -13,13 +13,7 @@ int main()
 {
     srand(static_cast<unsigned>(time(nullptr)));
 
-    GameWorld world(
-        Config::WINDOW_WIDTH,
-        Config::WINDOW_HEIGHT,
-        Config::GRID_SIZE,
-        Config::CELL_SIZE,
-        "Evolution Simulation"
-    );
+GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH, Config::GRID_HEIGHT, Config::CELL_SIZE, "Evolution Simulation");
 
     PlayerInspector inspector;
 

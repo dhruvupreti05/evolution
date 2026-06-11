@@ -5,12 +5,13 @@
 namespace Config
 {
     // Window settings
-    constexpr int WINDOW_WIDTH = 800;
+    constexpr int WINDOW_WIDTH = 1200;
     constexpr int WINDOW_HEIGHT = 800;
 
     // Grid settings
-    constexpr int GRID_SIZE = 100;
     constexpr int CELL_SIZE = 8;
+    constexpr int GRID_WIDTH = WINDOW_WIDTH / CELL_SIZE; 
+    constexpr int GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
     // Simulation settings
     constexpr int NUM_PLAYERS = 100;
@@ -20,9 +21,9 @@ namespace Config
     constexpr int TICK_MS = 250;
 
     // Lake settings
-    constexpr int MIN_LAKE_BLOCKS = 100;
+    constexpr int MIN_LAKE_BLOCKS = 250;
     constexpr int LAKE_BLOCK_RANGE = 50;
-    constexpr int LAKE_SPAWN_BOUNDARY_BUFFER = 5;
+    constexpr int LAKE_SPAWN_BOUNDARY_BUFFER = 10;
 
     // Colors
     const sf::Color COLOR_BACKGROUND = sf::Color(235, 220, 180);

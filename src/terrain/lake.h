@@ -10,7 +10,13 @@
 class Lake : public Clump
 {
 public:
-    Lake(int centerX, int centerY, int numWaterBlocks, int gridSize);
+    Lake(
+    int centerX,
+    int centerY,
+    int numWaterBlocks,
+    int gridWidth,
+    int gridHeight
+);
 
     static void init(GameWorld& world);
     static void drawLakes(GameWorld& world);

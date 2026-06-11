@@ -1,21 +1,23 @@
-#include "gameworld.h"
-#include "config.h"
+#include "core/gameworld.h"
+#include "core/config.h"
 
 #include <cmath>
 
 GameWorld::GameWorld(
     int windowWidth,
     int windowHeight,
-    int gridSize,
+    int gridWidth,
+    int gridHeight,
     int cellSize,
     const std::string& title
 )
     : window(sf::VideoMode(windowWidth, windowHeight), title),
       windowWidth(windowWidth),
       windowHeight(windowHeight),
-      gridSize(gridSize),
+      gridWidth(gridWidth),
+      gridHeight(gridHeight),
       cellSize(cellSize),
-      tiles(gridSize, std::vector<TileType>(gridSize, TileType::Empty))
+      tiles(gridHeight, std::vector<TileType>(gridWidth, TileType::Empty))
 {
 }
 
@@ -61,7 +63,7 @@ TileType GameWorld::getTile(int x, int y) const
 
 bool GameWorld::isInsideGrid(int x, int y) const
 {
-    return x >= 0 && x < gridSize && y >= 0 && y < gridSize;
+    return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
 }
 
 sf::RenderWindow& GameWorld::getWindow()
@@ -69,9 +71,14 @@ sf::RenderWindow& GameWorld::getWindow()
     return window;
 }
 
-int GameWorld::getGridSize() const
+int GameWorld::getGridWidth() const
 {
-    return gridSize;
+    return gridWidth;
+}
+
+int GameWorld::getGridHeight() const
+{
+    return gridHeight;
 }
 
 int GameWorld::getCellSize() const
@@ -134,44 +141,6 @@ void GameWorld::drawTile(int x, int y, sf::Color color)
     window.draw(square);
 }
 
-void GameWorld::drawGrid()
-{
-    sf::VertexArray lines(sf::Lines);
-
-    for (int i = 0; i <= gridSize; ++i)
-    {
-        lines.append(
-            sf::Vertex(
-                sf::Vector2f(i * cellSize, 0),
-                sf::Color::White
-            )
-        );
-
-        lines.append(
-            sf::Vertex(
-                sf::Vector2f(i * cellSize, windowHeight),
-                sf::Color::White
-            )
-        );
-
-        lines.append(
-            sf::Vertex(
-                sf::Vector2f(0, i * cellSize),
-                sf::Color::White
-            )
-        );
-
-        lines.append(
-            sf::Vertex(
-                sf::Vector2f(windowWidth, i * cellSize),
-                sf::Color::White
-            )
-        );
-    }
-
-    window.draw(lines);
-}
-
 void GameWorld::drawTileOutline(int x, int y, sf::Color color, float thickness)
 {
     if (!isInsideGrid(x, y))
@@ -182,7 +151,6 @@ void GameWorld::drawTileOutline(int x, int y, sf::Color color, float thickness)
     sf::RectangleShape square;
     square.setSize(sf::Vector2f(cellSize, cellSize));
     square.setPosition(x * cellSize, y * cellSize);
-
     square.setFillColor(sf::Color::Transparent);
     square.setOutlineColor(color);
     square.setOutlineThickness(thickness);
@@ -216,4 +184,45 @@ void GameWorld::drawLine(
     line.setRotation(angle);
 
     window.draw(line);
+}
+
+void GameWorld::drawGrid()
+{
+    sf::VertexArray lines(sf::Lines);
+
+    for (int x = 0; x <= gridWidth; ++x)
+    {
+        lines.append(
+            sf::Vertex(
+                sf::Vector2f(x * cellSize, 0),
+                sf::Color::White
+            )
+        );
+
+        lines.append(
+            sf::Vertex(
+                sf::Vector2f(x * cellSize, windowHeight),
+                sf::Color::White
+            )
+        );
+    }
+
+    for (int y = 0; y <= gridHeight; ++y)
+    {
+        lines.append(
+            sf::Vertex(
+                sf::Vector2f(0, y * cellSize),
+                sf::Color::White
+            )
+        );
+
+        lines.append(
+            sf::Vertex(
+                sf::Vector2f(windowWidth, y * cellSize),
+                sf::Color::White
+            )
+        );
+    }
+
+    window.draw(lines);
 }

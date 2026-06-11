@@ -2,59 +2,124 @@
 #include "core/config.h"
 
 #include <cstdlib>
+#include <cmath>
+#include <limits>
 
 std::vector<Lake> Lake::lakes;
 
-Lake::Lake(int centerX, int centerY, int numWaterBlocks, int gridSize)
-    : Clump(centerX, centerY, numWaterBlocks, gridSize)
+struct LakeSpawnPoint
+{
+    int x;
+    int y;
+};
+
+Lake::Lake(
+    int centerX,
+    int centerY,
+    int numWaterBlocks,
+    int gridWidth,
+    int gridHeight
+)
+    : Clump(centerX, centerY, numWaterBlocks, gridWidth, gridHeight)
 {
     generateSandBoundary();
 }
 
 void Lake::init(GameWorld& world)
 {
-    int gridSize = world.getGridSize();
+    int gridWidth = world.getGridWidth();
+    int gridHeight = world.getGridHeight();
+
     int buffer = Config::LAKE_SPAWN_BOUNDARY_BUFFER;
 
-    int usableMin = buffer;
-    int usableMax = gridSize - buffer - 1;
-    int usableSize = usableMax - usableMin + 1;
+    int usableMinX = buffer;
+    int usableMaxX = gridWidth - buffer - 1;
 
-    if (usableSize <= 0)
+    int usableMinY = buffer;
+    int usableMaxY = gridHeight - buffer - 1;
+
+    if (usableMaxX < usableMinX || usableMaxY < usableMinY)
     {
         return;
     }
 
     int numLakes = Config::NUM_LAKES;
 
-    int columns = static_cast<int>(std::ceil(std::sqrt(numLakes)));
-    int rows = static_cast<int>(std::ceil(static_cast<double>(numLakes) / columns));
+    std::vector<LakeSpawnPoint> candidates;
 
-    for (int i = 0; i < numLakes; ++i)
+    for (int y = usableMinY; y <= usableMaxY; ++y)
     {
-        int row = i / columns;
-        int col = i % columns;
+        for (int x = usableMinX; x <= usableMaxX; ++x)
+        {
+            candidates.push_back({x, y});
+        }
+    }
 
-        int regionXStart = (col * usableSize) / columns;
-        int regionXEnd = ((col + 1) * usableSize) / columns - 1;
+    if (candidates.empty())
+    {
+        return;
+    }
 
-        int regionYStart = (row * usableSize) / rows;
-        int regionYEnd = ((row + 1) * usableSize) / rows - 1;
+    std::vector<LakeSpawnPoint> chosenCenters;
 
-        int regionWidth = regionXEnd - regionXStart + 1;
-        int regionHeight = regionYEnd - regionYStart + 1;
+    int firstIndex = rand() % candidates.size();
+    chosenCenters.push_back(candidates[firstIndex]);
+    candidates.erase(candidates.begin() + firstIndex);
 
-        int gridX = usableMin + regionXStart + rand() % regionWidth;
-        int gridY = usableMin + regionYStart + rand() % regionHeight;
+    while (
+        static_cast<int>(chosenCenters.size()) < numLakes &&
+        !candidates.empty()
+    )
+    {
+        double bestDistanceToNearestLake = -1.0;
+        int bestCandidateIndex = -1;
 
+        for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
+        {
+            LakeSpawnPoint candidate = candidates[i];
+
+            double distanceToNearestLake = std::numeric_limits<double>::max();
+
+            for (const auto& center : chosenCenters)
+            {
+                int dx = candidate.x - center.x;
+                int dy = candidate.y - center.y;
+
+                double distanceSquared = dx * dx + dy * dy;
+
+                if (distanceSquared < distanceToNearestLake)
+                {
+                    distanceToNearestLake = distanceSquared;
+                }
+            }
+
+            if (distanceToNearestLake > bestDistanceToNearestLake)
+            {
+                bestDistanceToNearestLake = distanceToNearestLake;
+                bestCandidateIndex = i;
+            }
+        }
+
+        if (bestCandidateIndex == -1)
+        {
+            break;
+        }
+
+        chosenCenters.push_back(candidates[bestCandidateIndex]);
+        candidates.erase(candidates.begin() + bestCandidateIndex);
+    }
+
+    for (const auto& center : chosenCenters)
+    {
         int numWaterBlocks =
             rand() % Config::LAKE_BLOCK_RANGE + Config::MIN_LAKE_BLOCKS;
 
         lakes.emplace_back(
-            gridX,
-            gridY,
+            center.x,
+            center.y,
             numWaterBlocks,
-            world.getGridSize()
+            world.getGridWidth(),
+            world.getGridHeight()
         );
     }
 

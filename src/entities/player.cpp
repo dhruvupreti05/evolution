@@ -30,8 +30,8 @@ void Player::init(GameWorld& world)
 
         do
         {
-            gridX = rand() % world.getGridSize();
-            gridY = rand() % world.getGridSize();
+            gridX = rand() % world.getGridWidth();
+            gridY = rand() % world.getGridHeight();
         }
         while (world.getTile(gridX, gridY) == TileType::Water);
 
