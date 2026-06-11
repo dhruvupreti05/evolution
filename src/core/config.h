@@ -39,12 +39,16 @@ namespace Config
     constexpr int HUMAN_START_THIRST = 1000;
     constexpr int HUMAN_START_HUNGER = 1000;
 
+    constexpr int HUMAN_START_HEALTH_BUFFER = 500;
+    constexpr int HUMAN_START_THIRST_BUFFER = 250;
+    constexpr int HUMAN_START_HUNGER_BUFFER = 250;
+
     constexpr int HUMAN_HEALTH_DECAY = 0;
     constexpr int HUMAN_THIRST_DECAY = 2;
     constexpr int HUMAN_HUNGER_DECAY = 1;
     constexpr int HUMAN_AGE_INCREASE = 1;
 
-    constexpr int HUMAN_VISION_RANGE = 10;
+    constexpr int HUMAN_VISION_RANGE = 10; // after 11 its too big for window view
 
     // Inspector window settings
     constexpr int INSPECTOR_WINDOW_WIDTH = 420;

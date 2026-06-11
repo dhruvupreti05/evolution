@@ -9,12 +9,11 @@ std::vector<Player> Player::players;
 int Player::nextId = 0;
 int Player::inspectedPlayerId = -1;
 
-Player::Player(int gridX, int gridY)
-    : x(gridX),
+Player::Player(int gridX, int gridY) : x(gridX),
       y(gridY),
-      health(Config::HUMAN_START_HEALTH + rand() % 20),
-      thirst(Config::HUMAN_START_THIRST + rand() % 20),
-      hunger(Config::HUMAN_START_HUNGER + rand() % 20),
+      health(Config::HUMAN_START_HEALTH + (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) - Config::HUMAN_START_HEALTH_BUFFER)),
+      thirst(Config::HUMAN_START_THIRST + (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) - Config::HUMAN_START_THIRST_BUFFER)),
+      hunger(Config::HUMAN_START_HUNGER + (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) - Config::HUMAN_START_HUNGER_BUFFER)),
       age(0),
       gender((rand() % 2 == 0) ? Gender::Male : Gender::Female),
       id(nextId++)
