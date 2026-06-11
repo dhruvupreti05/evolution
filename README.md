@@ -42,10 +42,6 @@ Instead of placing agents into the full complex world immediately, the world slo
 
 # To Do
 
-## To Fix
-
-* Lakes are currently spawning too close together. Change the lake generation system so lakes are more spread out across the map.
-
 ## To Add
 
 ### Death and Bodies
