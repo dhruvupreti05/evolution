@@ -2,14 +2,24 @@
 #include "core/config.h"
 #include "terrain/lake.h"
 #include "resources/food.h"
+#include "entities/predator.h"
 
 #include <cstdlib>
 #include <set>
 #include <utility>
+#include <cmath>
 
 std::vector<Player> Player::players;
 int Player::nextId = 0;
 int Player::inspectedPlayerId = -1;
+
+static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
+{
+    int dx = std::abs(x1 - x2);
+    int dy = std::abs(y1 - y2);
+
+    return dx + dy == 1;
+}
 
 Player::Player(int gridX, int gridY) : x(gridX),
       y(gridY),
@@ -44,6 +54,11 @@ void Player::update(GameWorld& world)
 {
     if (dead)
     {
+        if (deadBodyTicksRemaining > 0)
+        {
+            deadBodyTicksRemaining--;
+        }
+
         return;
     }
 
@@ -61,6 +76,58 @@ void Player::update(GameWorld& world)
     }
 
     moveRandomly(world);
+}
+
+void Player::takeDamage(int amount)
+{
+    if (dead)
+    {
+        return;
+    }
+
+    health -= amount;
+
+    if (health < 0)
+    {
+        health = 0;
+    }
+
+    checkDeath();
+}
+
+bool Player::hasBody() const
+{
+    return dead && deadBodyTicksRemaining > 0 && bodyMealTicksRemaining > 0;
+}
+
+bool Player::isBodyEdible() const
+{
+    return hasBody();
+}
+
+bool Player::isBodyClaimedThisTick() const
+{
+    return bodyClaimedThisTick;
+}
+
+void Player::claimBodyForEating()
+{
+    bodyClaimedThisTick = true;
+}
+
+void Player::eatBodyOneTick()
+{
+    if (!hasBody())
+    {
+        return;
+    }
+
+    bodyMealTicksRemaining--;
+
+    if (bodyMealTicksRemaining < 0)
+    {
+        bodyMealTicksRemaining = 0;
+    }
 }
 
 void Player::decayStats()
@@ -88,9 +155,17 @@ void Player::decayStats()
 
 void Player::checkDeath()
 {
+    if (dead)
+    {
+        return;
+    }
+
     if (health <= 0 || thirst <= 0 || hunger <= 0)
     {
         dead = true;
+        deadBodyTicksRemaining = Config::TICKS_PER_DEAD_BODY;
+        bodyMealTicksRemaining = Config::TICKS_PER_MEAL_HUMAN;
+        bodyClaimedThisTick = false;
     }
 }
 
@@ -225,6 +300,12 @@ void Player::move(Direction direction, GameWorld& world)
     attempt.succeeded = false;
 
     if (!world.isInsideGrid(newX, newY))
+    {
+        recordMoveAttempt(attempt);
+        return;
+    }
+
+    if (direction != Direction::Stay && Player::isBlockingEntityAt(newX, newY))
     {
         recordMoveAttempt(attempt);
         return;
@@ -435,6 +516,25 @@ void Player::draw(GameWorld& world) const
     else
     {
         world.drawTile(x, y, TileType::Human);
+    }
+}
+
+void Player::drawBodies(GameWorld& world)
+{
+    for (const auto& player : players)
+    {
+        if (player.hasBody())
+        {
+            world.drawTile(player.getX(), player.getY(), Config::COLOR_DEAD_BODY);
+        }
+    }
+}
+
+void Player::resetBodyEatingClaims()
+{
+    for (auto& player : players)
+    {
+        player.bodyClaimedThisTick = false;
     }
 }
 
@@ -821,6 +921,11 @@ bool Player::isPlayerAt(int x, int y)
     {
         if (player.isDead())
         {
+            if (player.hasBody() && player.getX() == x && player.getY() == y)
+            {
+                return true;
+            }
+
             continue;
         }
 
@@ -831,4 +936,101 @@ bool Player::isPlayerAt(int x, int y)
     }
 
     return false;
+}
+
+bool Player::isBlockingEntityAt(int x, int y)
+{
+    for (const auto& player : players)
+    {
+        if (player.isDead())
+        {
+            if (player.hasBody() && player.getX() == x && player.getY() == y)
+            {
+                return true;
+            }
+
+            continue;
+        }
+
+        if (player.getX() == x && player.getY() == y)
+        {
+            return true;
+        }
+    }
+
+    if (Predator::isPredatorAt(x, y))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+Player* Player::getAdjacentLivingPlayer(int x, int y)
+{
+    for (auto& player : players)
+    {
+        if (player.isDead())
+        {
+            continue;
+        }
+
+        if (isFourNeighborDistance(x, y, player.getX(), player.getY()))
+        {
+            return &player;
+        }
+    }
+
+    return nullptr;
+}
+
+Player* Player::getAdjacentEdibleBody(int x, int y)
+{
+    for (auto& player : players)
+    {
+        if (!player.isBodyEdible())
+        {
+            continue;
+        }
+
+        if (player.isBodyClaimedThisTick())
+        {
+            continue;
+        }
+
+        if (isFourNeighborDistance(x, y, player.getX(), player.getY()))
+        {
+            return &player;
+        }
+    }
+
+    return nullptr;
+}
+
+Player* Player::getNearestLivingPlayerOrBody(int x, int y)
+{
+    Player* nearest = nullptr;
+    int bestDistance = 0;
+
+    for (auto& player : players)
+    {
+        bool validTarget = !player.isDead() || player.isBodyEdible();
+
+        if (!validTarget)
+        {
+            continue;
+        }
+
+        int dx = std::abs(player.getX() - x);
+        int dy = std::abs(player.getY() - y);
+        int distance = dx + dy;
+
+        if (nearest == nullptr || distance < bestDistance)
+        {
+            nearest = &player;
+            bestDistance = distance;
+        }
+    }
+
+    return nearest;
 }

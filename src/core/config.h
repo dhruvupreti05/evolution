@@ -14,14 +14,14 @@ namespace Config
     constexpr int GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
     // Simulation settings
-    constexpr int NUM_PLAYERS = 100;
+    constexpr int NUM_PLAYERS = 250;
     constexpr int NUM_LAKES = 10;
 
     // Time settings
     constexpr int TICK_MS = 250;
 
     // Lake settings
-    constexpr int MIN_LAKE_BLOCKS = 250;
+    constexpr int MIN_LAKE_BLOCKS = 150;
     constexpr int LAKE_BLOCK_RANGE = 50;
     constexpr int LAKE_SPAWN_BOUNDARY_BUFFER = 10;
 
@@ -33,6 +33,8 @@ namespace Config
     const sf::Color COLOR_TREE = sf::Color(34, 139, 34);
     const sf::Color COLOR_FOOD = sf::Color::Green;
     const sf::Color COLOR_SELECTED_HUMAN = sf::Color::Black;
+    const sf::Color COLOR_DEAD_BODY = sf::Color(120, 120, 120);
+    const sf::Color COLOR_PREDATOR = sf::Color::Red;
 
     // Human settings
     constexpr int HUMAN_START_HEALTH = 1000;
@@ -66,5 +68,27 @@ namespace Config
     // Day/night settings
     constexpr int TICKS_PER_DAY = 300;
     constexpr int MIDNIGHT_RGB_DECREASE = 150;
+
+    // Body settings
+    constexpr int TICKS_PER_DEAD_BODY = 300;
+    constexpr int TICKS_PER_MEAL_HUMAN = 10;
+
+    // Predator settings
+    constexpr int NUMBER_OF_LAND_PREDATORS = 5;
+    constexpr int NUMBER_OF_WATER_PREDATORS = 5;
+
+    constexpr int PREDATOR_START_HEALTH = 1000;
+    constexpr int PREDATOR_START_THIRST = 1000;
+    constexpr int PREDATOR_START_HUNGER = 1000;
+
+    constexpr int PREDATOR_HEALTH_DECAY = 0;
+    constexpr int PREDATOR_THIRST_DECAY = 2;
+    constexpr int PREDATOR_HUNGER_DECAY = 2;
+
+    constexpr int PREDATOR_THIRST_MODE_THRESHOLD = 500;
+
+    constexpr int HEALTH_PER_PREDATOR_ATTACK = 500;
+    constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20;
+    constexpr int PREDATOR_THIRST_PER_WATER_BLOCK = 200;
 
 }

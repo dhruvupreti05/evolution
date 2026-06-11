@@ -9,6 +9,7 @@
 #include "resources/food.h"
 #include "ui/playerinspector.h"
 #include "core/daynight.h"
+#include "entities/predator.h"
 
 int main()
 {
@@ -20,6 +21,7 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
 
     Lake::init(world);
     Player::init(world);
+    Predator::init(world);
 
     bool paused = false;
 
@@ -51,8 +53,11 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
         if (!paused)
         {
             DayNight::update();
+
+            Player::resetBodyEatingClaims();
             
             Player::updatePlayers(world);
+            Predator::updatePredators(world);
             Food::update(world);
         }
 
@@ -62,7 +67,9 @@ GameWorld world(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::GRID_WIDTH,
 
         Lake::drawLakes(world);
         Food::drawFoods(world);
+        Player::drawBodies(world);
         Player::drawPlayers(world);
+        Predator::drawPredators(world);
 
         world.display();
 

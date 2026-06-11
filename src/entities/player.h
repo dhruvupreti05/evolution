@@ -95,7 +95,28 @@ public:
 
     static bool isPlayerAt(int x, int y);
 
+    void takeDamage(int amount);
+
+    bool hasBody() const;
+    bool isBodyEdible() const;
+    bool isBodyClaimedThisTick() const;
+
+    void claimBodyForEating();
+    void eatBodyOneTick();
+
+    static void drawBodies(GameWorld& world);
+    static void resetBodyEatingClaims();
+
+    static bool isBlockingEntityAt(int x, int y);
+    static Player* getAdjacentLivingPlayer(int x, int y);
+    static Player* getAdjacentEdibleBody(int x, int y);
+    static Player* getNearestLivingPlayerOrBody(int x, int y);
+
 private:
+    int deadBodyTicksRemaining = 0;
+    int bodyMealTicksRemaining = 0;
+    bool bodyClaimedThisTick = false;
+    
     static std::vector<Player> players;
     static int nextId;
     static int inspectedPlayerId;
