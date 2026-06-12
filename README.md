@@ -44,68 +44,22 @@ Instead of placing agents into the full complex world immediately, the world slo
 
 ## To Add
 
-### Death and Bodies
+### Simulation:
 
-* When a person dies, their body should remain on the map.
-* Dead bodies should be displayed as grey blocks.
 * Bodies may later contribute to disease if many are close together.
-
-### Food and Water
-
-* Add a way for people to eat food when they are within a one-block radius.
-* Add a way for people to drink water when they are within a one-block radius.
-* Add food sources around the map.
 * Add forests, possibly with red dots representing apples or other food.
-
-### Fighting
-
-* Add a way for people to fight when they are within a one-block radius of another person or predator.
-
-### Inventory
-
-* Eventually, people may be able to pick up water and place it somewhere else to generate their own food.
 * People may also be able to pick up food and feed it to their young.
-
-### Day and Night Cycle
-
-* Add a day and night cycle.
-* Change the ground color depending on the time of day.
 * Add tiredness as a factor that affects health.
 * Tiredness should decrease when a person is stationary, which will act as sleeping.
-
-### Weather
-
-* Add weather events.
-* Rain should make lakes grow larger and may destroy some plants.
-* Very hot weather should make lakes shrink and may cause plants to die or disappear.
-
-### Disease
-
 * Add disease zones when many dead bodies are near each other.
 * Disease should affect people within a certain radius of clustered bodies.
-
-### Predators
-
-* Add land predators and water predators.
-* Predators should chase and attack people.
-* Predators should die after 500 ticks without eating someone.
 * Some predators should have a sleep setting so they only come out at night.
-
-### Neural Network Inputs
-
 * Add a way for each person to sense statistics about nearby people, resources, predators, and terrain.
 * These nearby statistics should be used as inputs to the neural network.
-
-## Game Viewer
-
-* Add a new window to list current simulation statistics and place to control weather.  
-
-### Hiding and Terrain Strategy
-
 * Allow people to hide in forests to avoid being seen by predators.
 * Allow people to hide in water to avoid land predators.
 * People should not be able to stay in water for too long, because water predators may attack them.
 
 # Developer
 
-This project is created by Dhruv Upreti.
+This project is created by [Dhruv Upreti](mailto:dhruvupreti05@gmail.com).
