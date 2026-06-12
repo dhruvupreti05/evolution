@@ -24,6 +24,11 @@ static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
     return dx + dy == 1;
 }
 
+static bool targetsEntity(const Action& action, const Human& human)
+{
+    return action.targetX == human.getX() && action.targetY == human.getY();
+}
+
 Human::Human(int gridX, int gridY)
     : Entity(
           gridX,
@@ -546,7 +551,40 @@ void Human::updateHumans(GameWorld& world)
 {
     for (auto& human : humans)
     {
-        human.update(world);
+        if (human.dead)
+        {
+            if (human.deadBodyTicksRemaining > 0)
+            {
+                human.deadBodyTicksRemaining--;
+            }
+
+            human.clearPreparedAction();
+            continue;
+        }
+
+        human.prepareAction(world);
+    }
+
+    resolveMatingActions(world);
+
+    for (auto& human : humans)
+    {
+        if (human.dead)
+        {
+            continue;
+        }
+
+        if (
+            human.hasPreparedAction() &&
+            human.getPreparedAction().type != ActionType::Mate
+        )
+        {
+            human.executePreparedAction(world);
+        }
+        else
+        {
+            human.clearPreparedAction();
+        }
     }
 }
 
@@ -1146,5 +1184,184 @@ void Human::giveManualAction(const Action& action)
     if (manualBrain != nullptr)
     {
         manualBrain->setNextAction(action);
+    }
+}
+
+bool Human::canMateWith(const Human& other) const
+{
+    if (dead || other.dead)
+    {
+        return false;
+    }
+
+    if (!isFourNeighborDistance(x, y, other.x, other.y))
+    {
+        return false;
+    }
+
+    return gender != other.gender;
+}
+
+bool Human::tryMateAt(GameWorld& world, int targetX, int targetY)
+{
+    // Mating is resolved in Human::resolveMatingActions()
+    // because both parents must choose Mate on the same tick.
+    return false;
+}
+
+Human* Human::getAdjacentMateCandidate(const Human& human)
+{
+    for (auto& other : humans)
+    {
+        if (other.getId() == human.getId())
+        {
+            continue;
+        }
+
+        if (human.canMateWith(other))
+        {
+            return &other;
+        }
+    }
+
+    return nullptr;
+}
+
+bool Human::findChildSpawnCell(
+    GameWorld& world,
+    const Human& parentA,
+    const Human& parentB,
+    int& childX,
+    int& childY
+)
+{
+    const int candidates[8][2] = {
+        {parentA.getX(), parentA.getY()},
+        {parentB.getX(), parentB.getY()},
+        {parentA.getX() + 1, parentA.getY()},
+        {parentA.getX() - 1, parentA.getY()},
+        {parentA.getX(), parentA.getY() + 1},
+        {parentA.getX(), parentA.getY() - 1},
+        {parentB.getX() + 1, parentB.getY()},
+        {parentB.getX() - 1, parentB.getY()}
+    };
+
+    for (const auto& candidate : candidates)
+    {
+        int x = candidate[0];
+        int y = candidate[1];
+
+        if (!world.isInsideGrid(x, y))
+        {
+            continue;
+        }
+
+        TileType tile = world.getTile(x, y);
+
+        if (tile == TileType::Water || tile == TileType::Crop)
+        {
+            continue;
+        }
+
+        if (Human::isBlockingEntityAt(x, y))
+        {
+            continue;
+        }
+
+        childX = x;
+        childY = y;
+        return true;
+    }
+
+    return false;
+}
+
+void Human::resolveMatingActions(GameWorld& world)
+{
+    std::vector<int> alreadyMatedIds;
+
+    auto alreadyMated = [&](int id)
+    {
+        for (int matedId : alreadyMatedIds)
+        {
+            if (matedId == id)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    int originalCount = static_cast<int>(humans.size());
+
+    for (int i = 0; i < originalCount; ++i)
+    {
+        Human& parentA = humans[i];
+
+        if (
+            parentA.dead ||
+            alreadyMated(parentA.getId()) ||
+            !parentA.hasPreparedAction() ||
+            parentA.getPreparedAction().type != ActionType::Mate
+        )
+        {
+            continue;
+        }
+
+        for (int j = i + 1; j < originalCount; ++j)
+        {
+            Human& parentB = humans[j];
+
+            if (
+                parentB.dead ||
+                alreadyMated(parentB.getId()) ||
+                !parentB.hasPreparedAction() ||
+                parentB.getPreparedAction().type != ActionType::Mate
+            )
+            {
+                continue;
+            }
+
+            if (!parentA.canMateWith(parentB))
+            {
+                continue;
+            }
+
+            if (
+                !targetsEntity(parentA.getPreparedAction(), parentB) ||
+                !targetsEntity(parentB.getPreparedAction(), parentA)
+            )
+            {
+                continue;
+            }
+
+            int childX;
+            int childY;
+
+            if (!findChildSpawnCell(world, parentA, parentB, childX, childY))
+            {
+                continue;
+            }
+
+            int parentAId = parentA.getId();
+            int parentBId = parentB.getId();
+
+            humans.emplace_back(childX, childY);
+            int childId = humans.back().getId();
+
+            for (auto& human : humans)
+            {
+                if (human.getId() == parentAId || human.getId() == parentBId)
+                {
+                    human.addChild(childId);
+                    human.clearPreparedAction();
+                }
+            }
+
+            alreadyMatedIds.push_back(parentAId);
+            alreadyMatedIds.push_back(parentBId);
+            break;
+        }
     }
 }

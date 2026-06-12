@@ -3,6 +3,8 @@
 #include "entities/action.h"
 #include "brain/brain.h"
 
+#include <utility>
+
 Entity::Entity(
     int gridX,
     int gridY,
@@ -20,6 +22,15 @@ Entity::Entity(
 
 void Entity::update(GameWorld& world)
 {
+    prepareAction(world);
+    executePreparedAction(world);
+}
+
+void Entity::prepareAction(GameWorld& world)
+{
+    preparedAction = Action::stay();
+    preparedActionReady = false;
+
     if (dead)
     {
         return;
@@ -33,7 +44,45 @@ void Entity::update(GameWorld& world)
         return;
     }
 
-    executeAction(brain->chooseAction(*this, world), world);
+    preparedAction = brain->chooseAction(*this, world);
+    preparedActionReady = true;
+}
+
+void Entity::executePreparedAction(GameWorld& world)
+{
+    if (!preparedActionReady || dead)
+    {
+        return;
+    }
+
+    executeAction(preparedAction, world);
+    clearPreparedAction();
+}
+
+const Action& Entity::getPreparedAction() const
+{
+    return preparedAction;
+}
+
+bool Entity::hasPreparedAction() const
+{
+    return preparedActionReady;
+}
+
+void Entity::clearPreparedAction()
+{
+    preparedAction = Action::stay();
+    preparedActionReady = false;
+}
+
+void Entity::addChild(int childId)
+{
+    children.push_back(childId);
+}
+
+const std::vector<int>& Entity::getChildren() const
+{
+    return children;
 }
 
 int Entity::getX() const { return x; }
@@ -121,6 +170,10 @@ void Entity::executeAction(const Action& action, GameWorld& world)
         case ActionType::Drop:
             tryDrop(world);
             break;
+        
+        case ActionType::Mate:
+            tryMateAt(world, action.targetX, action.targetY);
+            break;
 
         case ActionType::Stay:
         default:
@@ -134,6 +187,11 @@ bool Entity::tryPickUp(GameWorld& world)
 }
 
 bool Entity::tryDrop(GameWorld& world)
+{
+    return false;
+}
+
+bool Entity::tryMateAt(GameWorld& world, int targetX, int targetY)
 {
     return false;
 }

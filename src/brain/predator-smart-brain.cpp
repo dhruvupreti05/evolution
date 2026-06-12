@@ -1,5 +1,6 @@
 #include "brain/brain.h"
 #include "brain/predator-smart-brain.h"
+#include "entities/predator.h"
 
 #include "core/config.h"
 #include "entities/entity.h"
@@ -36,6 +37,22 @@ Direction PredatorSmartBrain::directionToward(
 
 Action PredatorSmartBrain::chooseAction(Entity& entity, GameWorld& world)
 {
+    Predator* predator = dynamic_cast<Predator*>(&entity);
+
+    if (predator != nullptr && rand() % 20 == 0)
+    {
+        Predator* mate = Predator::getAdjacentLivingPredator(
+            predator->getX(),
+            predator->getY(),
+            predator
+        );
+
+        if (mate != nullptr)
+        {
+            return Action::mate(mate->getX(), mate->getY());
+        }
+    }
+
     if (entity.getThirst() <= Config::PREDATOR_THIRST_MODE_THRESHOLD)
     {
         return chooseThirstAction(entity, world);

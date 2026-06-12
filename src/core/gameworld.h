@@ -9,14 +9,7 @@
 class GameWorld
 {
 public:
-    GameWorld(
-        int windowWidth,
-        int windowHeight,
-        int gridWidth,
-        int gridHeight,
-        int cellSize,
-        const std::string& title
-    );
+    GameWorld(int windowWidth, int windowHeight, int gridWidth, int gridHeight, int cellSize, const std::string& title);
 
     bool isOpen() const;
     bool pollEvent(sf::Event& event);

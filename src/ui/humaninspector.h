@@ -20,6 +20,8 @@ public:
     void handleEvents(GameWorld& world);
     void draw(GameWorld& world);
 
+    void mateFacingEntity();
+
 private:
     bool fontLoaded = false;
 

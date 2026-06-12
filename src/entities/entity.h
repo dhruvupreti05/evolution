@@ -1,23 +1,18 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "core/gameworld.h"
 #include "entities/direction.h"
+#include "entities/action.h"
 
 class Brain;
-struct Action;
 
 class Entity
 {
 public:
-    Entity(
-        int gridX,
-        int gridY,
-        int startHealth,
-        int startThirst,
-        int startHunger
-    );
+    Entity(int gridX, int gridY, int startHealth, int startThirst, int startHunger);
 
     virtual ~Entity() = default;
 
@@ -49,8 +44,18 @@ public:
     virtual bool tryEatAt(GameWorld& world, int targetX, int targetY) = 0;
     virtual bool tryDrinkAt(GameWorld& world, int targetX, int targetY) = 0;
     virtual bool tryAttackAt(GameWorld& world, int targetX, int targetY) = 0;
+    virtual bool tryMateAt(GameWorld& world, int targetX, int targetY);
     virtual bool tryPickUp(GameWorld& world);
     virtual bool tryDrop(GameWorld& world);
+
+    void prepareAction(GameWorld& world);
+    void executePreparedAction(GameWorld& world);
+    const Action& getPreparedAction() const;
+    bool hasPreparedAction() const;
+    void clearPreparedAction();
+
+    void addChild(int childId);
+    const std::vector<int>& getChildren() const;
 
 protected:
     int x;
@@ -60,12 +65,17 @@ protected:
     int thirst;
     int hunger;
 
+    virtual void decayStats() = 0;
+    virtual void checkDeath() = 0;
+
     bool dead = false;
 
     std::unique_ptr<Brain> brain;
 
-    void executeAction(const Action& action, GameWorld& world);
+    Action preparedAction = Action::stay();
+    bool preparedActionReady = false;
 
-    virtual void decayStats() = 0;
-    virtual void checkDeath() = 0;
+    std::vector<int> children;
+
+    void executeAction(const Action& action, GameWorld& world);
 };

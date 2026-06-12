@@ -121,6 +121,13 @@ public:
     static int countAlive();
     static int countDead();
 
+    bool tryMateAt(GameWorld& world, int targetX, int targetY) override;
+
+    static void resolveMatingActions(GameWorld& world);
+    static Human* getAdjacentMateCandidate(const Human& human);
+
+    bool canMateWith(const Human& other) const;
+
 private:
     int deadBodyTicksRemaining = 0;
     
@@ -145,6 +152,14 @@ private:
 
     void decayStats() override;
     void checkDeath() override;
+
+    static bool findChildSpawnCell(
+        GameWorld& world,
+        const Human& parentA,
+        const Human& parentB,
+        int& childX,
+        int& childY
+    );
 
     void recordMoveAttempt(MoveAttempt attempt);
     MoveAttempt getPreviousMove() const;

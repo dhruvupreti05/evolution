@@ -14,7 +14,7 @@ namespace Config
     constexpr int GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
     // Simulation settings
-    constexpr int NUM_PLAYERS = 250;
+    constexpr int NUM_PLAYERS = 10;
     constexpr int NUM_LAKES = 10;
 
     // Time settings
@@ -51,14 +51,14 @@ namespace Config
     constexpr int HUMAN_HUNGER_DECAY = 1;
     constexpr int HUMAN_AGE_INCREASE = 1;
 
-    constexpr int HUMAN_VISION_RANGE = 10; // after 11 its too big for window view
+    constexpr int HUMAN_VISION_RANGE = 15;
     constexpr int HUMAN_INVENTORY_SIZE = 5;
 
     // Inspector window settings
     constexpr int INSPECTOR_WINDOW_WIDTH = 420;
     constexpr int INSPECTOR_WINDOW_HEIGHT = 760;
 
-    constexpr int INSPECTOR_VIEW_TILE_SIZE = 18;
+    constexpr int INSPECTOR_VIEW_TILE_SIZE = 12;
     constexpr int INSPECTOR_VIEW_TOP_MARGIN = 40;
     constexpr int INSPECTOR_STATS_START_Y = 330;
 
@@ -68,15 +68,15 @@ namespace Config
 
     // Day/night settings
     constexpr int TICKS_PER_DAY = 300;
-    constexpr int MIDNIGHT_RGB_DECREASE = 50;
+    constexpr int MIDNIGHT_RGB_DECREASE = 100;
 
     // Body settings
     constexpr int TICKS_PER_DEAD_BODY = 300;
     constexpr int TICKS_PER_DEAD_PREDATOR = 300;
 
     // Predator settings
-    constexpr int NUMBER_OF_LAND_PREDATORS = 10;
-    constexpr int NUMBER_OF_WATER_PREDATORS = 50;
+    constexpr int NUMBER_OF_LAND_PREDATORS = 5;
+    constexpr int NUMBER_OF_WATER_PREDATORS = 10;
 
     constexpr int PREDATOR_START_HEALTH = 1000;
     constexpr int PREDATOR_START_THIRST = 1000;

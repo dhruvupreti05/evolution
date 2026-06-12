@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 namespace
 {
@@ -291,11 +292,14 @@ void HumanInspector::handleEvents(GameWorld& world)
         {
             continue;
         }
-
         if (event.key.code == sf::Keyboard::Escape)
         {
             close();
             return;
+        }
+        else if (event.key.code == sf::Keyboard::M)
+        {
+            mateFacingEntity();
         }
         else if (event.key.code == sf::Keyboard::Right)
         {
@@ -495,16 +499,41 @@ void HumanInspector::drawPanelBackground()
 
 void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 {
-    int tileSize = Config::INSPECTOR_VIEW_TILE_SIZE;
+    const float tileSize = static_cast<float>(Config::INSPECTOR_VIEW_TILE_SIZE);
 
-    float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
+    const float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
-    int humanDrawX = static_cast<int>(centerX - tileSize / 2.0f);
-    int humanDrawY = 250;
+    const float humanDrawX = std::round(centerX - tileSize / 2.0f);
+    const float humanDrawY = 250.0f;
 
     drawCenteredText("Human View", centerX, 55.0f, 22);
 
     std::vector<VisibleTile> visibleTiles = human.getVisibleTiles(world);
+
+    auto drawTile = [&](float x,
+                        float y,
+                        sf::Color fillColor,
+                        sf::Color outlineColor,
+                        float outlineThickness)
+    {
+        sf::RectangleShape square;
+
+        square.setPosition(
+            std::round(x + outlineThickness),
+            std::round(y + outlineThickness)
+        );
+
+        square.setSize(sf::Vector2f(
+            tileSize - outlineThickness * 2.0f,
+            tileSize - outlineThickness * 2.0f
+        ));
+
+        square.setFillColor(fillColor);
+        square.setOutlineColor(outlineColor);
+        square.setOutlineThickness(outlineThickness);
+
+        window.draw(square);
+    };
 
     for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
     {
@@ -512,43 +541,40 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 
         for (int side = -sideLimit; side <= sideLimit; ++side)
         {
-            int drawX = humanDrawX + side * tileSize;
-            int drawY = humanDrawY - forward * tileSize;
+            float drawX = humanDrawX + side * tileSize;
+            float drawY = humanDrawY - forward * tileSize;
 
-            sf::RectangleShape square;
-            square.setSize(sf::Vector2f(tileSize - 2.0f, tileSize - 2.0f));
-            square.setPosition(drawX, drawY);
-            square.setFillColor(Config::COLOR_BACKGROUND);
-            square.setOutlineColor(sf::Color(215, 215, 215));
-            square.setOutlineThickness(1);
-
-            window.draw(square);
+            drawTile(
+                drawX,
+                drawY,
+                Config::COLOR_BACKGROUND,
+                sf::Color(215, 215, 215),
+                1.0f
+            );
         }
     }
 
     for (const auto& tile : visibleTiles)
     {
-        int drawX = humanDrawX + tile.side * tileSize;
-        int drawY = humanDrawY - tile.forward * tileSize;
+        float drawX = humanDrawX + tile.side * tileSize;
+        float drawY = humanDrawY - tile.forward * tileSize;
 
-        sf::RectangleShape square;
-        square.setSize(sf::Vector2f(tileSize - 2.0f, tileSize - 2.0f));
-        square.setPosition(drawX, drawY);
-        square.setFillColor(getColorFromTile(tile.tile));
-        square.setOutlineColor(sf::Color::Black);
-        square.setOutlineThickness(1);
-
-        window.draw(square);
+        drawTile(
+            drawX,
+            drawY,
+            getColorFromTile(tile.tile),
+            sf::Color::Black,
+            1.0f
+        );
     }
 
-    sf::RectangleShape humanSquare;
-    humanSquare.setSize(sf::Vector2f(tileSize, tileSize));
-    humanSquare.setPosition(humanDrawX, humanDrawY);
-    humanSquare.setFillColor(sf::Color::White);
-    humanSquare.setOutlineColor(sf::Color::Black);
-    humanSquare.setOutlineThickness(2);
-
-    window.draw(humanSquare);
+    drawTile(
+        humanDrawX,
+        humanDrawY,
+        sf::Color::White,
+        sf::Color::Black,
+        2.0f
+    );
 }
 
 void HumanInspector::drawStats(const Human& human)
@@ -754,4 +780,46 @@ void HumanInspector::dropItem()
     }
 
     human->giveManualAction(Action::drop());
+}
+
+void HumanInspector::mateFacingEntity()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    int targetX;
+    int targetY;
+
+    getFacingTarget(*human, targetX, targetY);
+
+    human->giveManualAction(Action::mate(targetX, targetY));
+
+    std::vector<Human>& humans = Human::getHumans();
+
+    for (Human& other : humans)
+    {
+        if (other.getId() == human->getId())
+        {
+            continue;
+        }
+
+        if (other.isDead())
+        {
+            continue;
+        }
+
+        if (other.getX() == targetX && other.getY() == targetY)
+        {
+            if (human->canMateWith(other))
+            {
+                other.giveManualAction(Action::mate(human->getX(), human->getY()));
+            }
+
+            return;
+        }
+    }
 }

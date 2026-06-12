@@ -40,7 +40,32 @@ public:
     static void killWaterPredatorsNotOnWater(GameWorld& world);
     static const std::vector<Predator>& getPredators();
 
+    bool tryMateAt(GameWorld& world, int targetX, int targetY) override;
+
+    int getId() const;
+    PredatorType getType() const;
+
+    static void resolveMatingActions(GameWorld& world);
+    static Predator* getAdjacentLivingPredator(
+        int x,
+        int y,
+        const Predator* self = nullptr
+    );
+
 private:
+
+    static int nextId;
+    int id;
+
+    static bool findChildSpawnCell(
+        GameWorld& world,
+        const Predator& parentA,
+        const Predator& parentB,
+        PredatorType childType,
+        int& childX,
+        int& childY
+    );
+
     static std::vector<Predator> predators;
 
     int deadBodyTicksRemaining = 0;

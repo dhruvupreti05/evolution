@@ -10,6 +10,7 @@
 #include <cmath>
 
 std::vector<Predator> Predator::predators;
+int Predator::nextId = 0;
 
 namespace
 {
@@ -89,7 +90,8 @@ Predator::Predator(int gridX, int gridY, PredatorType type)
           Config::PREDATOR_START_THIRST,
           Config::PREDATOR_START_HUNGER
       ),
-      type(type)
+      type(type),
+      id(nextId++)
 {
     setBrain(std::make_unique<PredatorSmartBrain>());
 }
@@ -123,7 +125,244 @@ void Predator::updatePredators(GameWorld& world)
 {
     for (auto& predator : predators)
     {
-        predator.update(world);
+        if (predator.dead)
+        {
+            if (predator.deadBodyTicksRemaining > 0)
+            {
+                predator.deadBodyTicksRemaining--;
+            }
+
+            predator.clearPreparedAction();
+            continue;
+        }
+
+        predator.prepareAction(world);
+    }
+
+    resolveMatingActions(world);
+
+    for (auto& predator : predators)
+    {
+        if (predator.dead)
+        {
+            continue;
+        }
+
+        if (
+            predator.hasPreparedAction() &&
+            predator.getPreparedAction().type != ActionType::Mate
+        )
+        {
+            predator.executePreparedAction(world);
+        }
+        else
+        {
+            predator.clearPreparedAction();
+        }
+    }
+}
+
+int Predator::getId() const
+{
+    return id;
+}
+
+PredatorType Predator::getType() const
+{
+    return type;
+}
+
+bool Predator::tryMateAt(GameWorld& world, int targetX, int targetY)
+{
+    return false;
+}
+
+Predator* Predator::getAdjacentLivingPredator(
+    int x,
+    int y,
+    const Predator* self
+)
+{
+    for (auto& predator : predators)
+    {
+        if (predator.dead)
+        {
+            continue;
+        }
+
+        if (self != nullptr && predator.getId() == self->getId())
+        {
+            continue;
+        }
+
+        if (isFourNeighborDistance(x, y, predator.getX(), predator.getY()))
+        {
+            return &predator;
+        }
+    }
+
+    return nullptr;
+}
+
+bool Predator::findChildSpawnCell(
+    GameWorld& world,
+    const Predator& parentA,
+    const Predator& parentB,
+    PredatorType childType,
+    int& childX,
+    int& childY
+)
+{
+    const int candidates[8][2] = {
+        {parentA.getX(), parentA.getY()},
+        {parentB.getX(), parentB.getY()},
+        {parentA.getX() + 1, parentA.getY()},
+        {parentA.getX() - 1, parentA.getY()},
+        {parentA.getX(), parentA.getY() + 1},
+        {parentA.getX(), parentA.getY() - 1},
+        {parentB.getX() + 1, parentB.getY()},
+        {parentB.getX() - 1, parentB.getY()}
+    };
+
+    for (const auto& candidate : candidates)
+    {
+        int x = candidate[0];
+        int y = candidate[1];
+
+        if (!world.isInsideGrid(x, y))
+        {
+            continue;
+        }
+
+        if (Human::isBlockingEntityAt(x, y))
+        {
+            continue;
+        }
+
+        if (Predator::isPredatorAt(x, y))
+        {
+            continue;
+        }
+
+        TileType tile = world.getTile(x, y);
+
+        if (childType == PredatorType::Land && tile == TileType::Water)
+        {
+            continue;
+        }
+
+        if (childType == PredatorType::Water && tile != TileType::Water)
+        {
+            continue;
+        }
+
+        childX = x;
+        childY = y;
+        return true;
+    }
+
+    return false;
+}
+
+void Predator::resolveMatingActions(GameWorld& world)
+{
+    std::vector<int> alreadyMatedIds;
+
+    auto alreadyMated = [&](int id)
+    {
+        for (int matedId : alreadyMatedIds)
+        {
+            if (matedId == id)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    int originalCount = static_cast<int>(predators.size());
+
+    for (int i = 0; i < originalCount; ++i)
+    {
+        Predator& parentA = predators[i];
+
+        if (
+            parentA.dead ||
+            alreadyMated(parentA.getId()) ||
+            !parentA.hasPreparedAction() ||
+            parentA.getPreparedAction().type != ActionType::Mate
+        )
+        {
+            continue;
+        }
+
+        for (int j = i + 1; j < originalCount; ++j)
+        {
+            Predator& parentB = predators[j];
+
+            if (
+                parentB.dead ||
+                alreadyMated(parentB.getId()) ||
+                !parentB.hasPreparedAction() ||
+                parentB.getPreparedAction().type != ActionType::Mate
+            )
+            {
+                continue;
+            }
+
+            if (
+                !isFourNeighborDistance(
+                    parentA.getX(),
+                    parentA.getY(),
+                    parentB.getX(),
+                    parentB.getY()
+                )
+            )
+            {
+                continue;
+            }
+
+            if (
+                parentA.getPreparedAction().targetX != parentB.getX() ||
+                parentA.getPreparedAction().targetY != parentB.getY() ||
+                parentB.getPreparedAction().targetX != parentA.getX() ||
+                parentB.getPreparedAction().targetY != parentA.getY()
+            )
+            {
+                continue;
+            }
+
+            PredatorType childType =
+                (rand() % 2 == 0) ? parentA.getType() : parentB.getType();
+
+            int childX;
+            int childY;
+
+            if (!findChildSpawnCell(world, parentA, parentB, childType, childX, childY))
+            {
+                continue;
+            }
+
+            int parentAId = parentA.getId();
+            int parentBId = parentB.getId();
+
+            predators.emplace_back(childX, childY, childType);
+            int childId = predators.back().getId();
+
+            for (auto& predator : predators)
+            {
+                if (predator.getId() == parentAId || predator.getId() == parentBId)
+                {
+                    predator.addChild(childId);
+                    predator.clearPreparedAction();
+                }
+            }
+
+            alreadyMatedIds.push_back(parentAId);
+            alreadyMatedIds.push_back(parentBId);
+            break;
+        }
     }
 }
 

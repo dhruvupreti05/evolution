@@ -53,3 +53,12 @@ Action Action::drop()
     action.type = ActionType::Drop;
     return action;
 }
+
+Action Action::mate(int x, int y)
+{
+    Action action;
+    action.type = ActionType::Mate;
+    action.targetX = x;
+    action.targetY = y;
+    return action;
+}
