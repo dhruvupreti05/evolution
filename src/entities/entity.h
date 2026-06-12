@@ -49,6 +49,8 @@ public:
     virtual bool tryEatAt(GameWorld& world, int targetX, int targetY) = 0;
     virtual bool tryDrinkAt(GameWorld& world, int targetX, int targetY) = 0;
     virtual bool tryAttackAt(GameWorld& world, int targetX, int targetY) = 0;
+    virtual bool tryPickUp(GameWorld& world);
+    virtual bool tryDrop(GameWorld& world);
 
 protected:
     int x;

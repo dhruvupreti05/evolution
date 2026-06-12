@@ -1,7 +1,7 @@
 #include "entities/predator.h"
 #include "core/config.h"
 #include "environment/lake.h"
-#include "entities/brain.h"
+#include "brain/predator-smart-brain.h"
 #include "entities/action.h"
 #include "entities/human.h"
 

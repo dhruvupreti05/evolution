@@ -8,7 +8,9 @@ enum class ActionType
     Move,
     Eat,
     Drink,
-    Attack
+    Attack,
+    PickUp,
+    Drop
 };
 
 struct Action
@@ -23,4 +25,6 @@ struct Action
     static Action eat(int x, int y);
     static Action drink(int x, int y);
     static Action attack(int x, int y);
+    static Action pickUp();
+    static Action drop();
 };

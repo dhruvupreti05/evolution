@@ -39,3 +39,17 @@ Action Action::attack(int x, int y)
     action.targetY = y;
     return action;
 }
+
+Action Action::pickUp()
+{
+    Action action;
+    action.type = ActionType::PickUp;
+    return action;
+}
+
+Action Action::drop()
+{
+    Action action;
+    action.type = ActionType::Drop;
+    return action;
+}

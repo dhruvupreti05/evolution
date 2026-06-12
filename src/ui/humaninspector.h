@@ -5,7 +5,6 @@
 
 #include "core/gameworld.h"
 #include "entities/human.h"
-#include "environment/daynight.h"
 #include "entities/action.h"
 
 class HumanInspector
@@ -22,7 +21,8 @@ public:
     void draw(GameWorld& world);
 
 private:
-    bool fontLoaded = false;;
+    bool fontLoaded = false;
+
     sf::RenderWindow window;
     sf::Font font;
 
@@ -31,8 +31,19 @@ private:
     void moveToNextHuman();
     void moveToPreviousHuman();
 
-    void moveSelectedHuman(Direction direction, GameWorld& world);
+    void moveSelectedHuman(Direction direction);
     void updateInspectedHumanId();
+
+    void resetAllHumanBrains();
+
+    Human* getSelectedHuman();
+
+    void eatFacingTile();
+    void drinkFacingTile();
+    void attackFacingTile();
+
+    void pickUpItem();
+    void dropItem();
 
     void drawPanelBackground();
     void drawVision(const Human& human, const GameWorld& world);

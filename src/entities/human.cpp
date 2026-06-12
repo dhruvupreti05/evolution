@@ -3,7 +3,8 @@
 #include "environment/lake.h"
 #include "entities/crop.h"
 #include "entities/predator.h"
-#include "entities/brain.h"
+#include "brain/manual-brain.h"
+#include "brain/random-brain.h"
 #include "entities/action.h"
 
 #include <cstdlib>

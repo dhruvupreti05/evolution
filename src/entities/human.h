@@ -96,8 +96,8 @@ public:
 
     void controlledMove(Direction direction, GameWorld& world);
 
-    bool tryPickUp(GameWorld& world);
-    bool tryDrop(GameWorld& world);
+    bool tryPickUp(GameWorld& world) override;
+    bool tryDrop(GameWorld& world) override;
 
     const std::vector<TileType>& getInventory() const;
 

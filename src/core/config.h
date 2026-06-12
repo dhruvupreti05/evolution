@@ -21,7 +21,7 @@ namespace Config
     constexpr int TICK_MS = 250;
 
     // Lake settings
-    constexpr int MIN_LAKE_BLOCKS = 150;
+    constexpr int MIN_LAKE_BLOCKS = 250;
     constexpr int LAKE_BLOCK_RANGE = 50;
     constexpr int LAKE_SPAWN_BOUNDARY_BUFFER = 10;
 

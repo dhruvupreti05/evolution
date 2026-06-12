@@ -1,7 +1,7 @@
 #include "entities/entity.h"
 
 #include "entities/action.h"
-#include "entities/brain.h"
+#include "brain/brain.h"
 
 Entity::Entity(
     int gridX,
@@ -114,8 +114,26 @@ void Entity::executeAction(const Action& action, GameWorld& world)
             tryAttackAt(world, action.targetX, action.targetY);
             break;
 
+        case ActionType::PickUp:
+            tryPickUp(world);
+            break;
+
+        case ActionType::Drop:
+            tryDrop(world);
+            break;
+
         case ActionType::Stay:
         default:
             break;
     }
+}
+
+bool Entity::tryPickUp(GameWorld& world)
+{
+    return false;
+}
+
+bool Entity::tryDrop(GameWorld& world)
+{
+    return false;
 }

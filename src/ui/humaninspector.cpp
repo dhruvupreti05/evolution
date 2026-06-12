@@ -1,10 +1,10 @@
-#include "humaninspector.h"
+#include "ui/humaninspector.h"
+
 #include "core/config.h"
-#include "entities/action.h"
+#include "environment/daynight.h"
 
 #include <vector>
 #include <string>
-#include <iostream>
 
 namespace
 {
@@ -33,7 +33,6 @@ namespace
         }
     }
 }
-
 
 HumanInspector::HumanInspector()
 {
@@ -67,22 +66,208 @@ void HumanInspector::close()
         window.close();
     }
 
-    std::vector<Human>& humans = Human::getHumans();
-
-    if (
-        selectedHumanIndex >= 0 &&
-        selectedHumanIndex < static_cast<int>(humans.size())
-    )
-    {
-        humans[selectedHumanIndex].setRandomBrain();
-    }
-
+    resetAllHumanBrains();
     Human::clearInspectedHuman();
 }
 
 bool HumanInspector::isOpen() const
 {
     return window.isOpen();
+}
+
+void HumanInspector::resetAllHumanBrains()
+{
+    std::vector<Human>& humans = Human::getHumans();
+
+    for (Human& human : humans)
+    {
+        if (!human.isDead())
+        {
+            human.setRandomBrain();
+        }
+    }
+}
+
+Human* HumanInspector::getSelectedHuman()
+{
+    std::vector<Human>& humans = Human::getHumans();
+
+    if (humans.empty())
+    {
+        return nullptr;
+    }
+
+    if (
+        selectedHumanIndex < 0 ||
+        selectedHumanIndex >= static_cast<int>(humans.size())
+    )
+    {
+        selectedHumanIndex = 0;
+    }
+
+    if (humans[selectedHumanIndex].isDead())
+    {
+        return nullptr;
+    }
+
+    return &humans[selectedHumanIndex];
+}
+
+void HumanInspector::updateInspectedHumanId()
+{
+    std::vector<Human>& humans = Human::getHumans();
+
+    if (humans.empty())
+    {
+        Human::clearInspectedHuman();
+        return;
+    }
+
+    if (
+        selectedHumanIndex < 0 ||
+        selectedHumanIndex >= static_cast<int>(humans.size())
+    )
+    {
+        selectedHumanIndex = 0;
+    }
+
+    resetAllHumanBrains();
+
+    Human* selectedHuman = getSelectedHuman();
+
+    if (selectedHuman == nullptr)
+    {
+        Human::clearInspectedHuman();
+        return;
+    }
+
+    selectedHuman->setManualBrain();
+    Human::setInspectedHumanId(selectedHuman->getId());
+}
+
+void HumanInspector::moveToNextHuman()
+{
+    std::vector<Human>& humans = Human::getHumans();
+
+    if (humans.empty())
+    {
+        Human::clearInspectedHuman();
+        return;
+    }
+
+    int humanCount = static_cast<int>(humans.size());
+
+    for (int attempts = 0; attempts < humanCount; ++attempts)
+    {
+        selectedHumanIndex++;
+
+        if (selectedHumanIndex >= humanCount)
+        {
+            selectedHumanIndex = 0;
+        }
+
+        if (!humans[selectedHumanIndex].isDead())
+        {
+            updateInspectedHumanId();
+            return;
+        }
+    }
+
+    Human::clearInspectedHuman();
+}
+
+void HumanInspector::moveToPreviousHuman()
+{
+    std::vector<Human>& humans = Human::getHumans();
+
+    if (humans.empty())
+    {
+        Human::clearInspectedHuman();
+        return;
+    }
+
+    int humanCount = static_cast<int>(humans.size());
+
+    for (int attempts = 0; attempts < humanCount; ++attempts)
+    {
+        selectedHumanIndex--;
+
+        if (selectedHumanIndex < 0)
+        {
+            selectedHumanIndex = humanCount - 1;
+        }
+
+        if (!humans[selectedHumanIndex].isDead())
+        {
+            updateInspectedHumanId();
+            return;
+        }
+    }
+
+    Human::clearInspectedHuman();
+}
+
+void HumanInspector::moveSelectedHuman(Direction direction)
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    human->giveManualAction(Action::move(direction));
+}
+
+void HumanInspector::eatFacingTile()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    int targetX;
+    int targetY;
+
+    getFacingTarget(*human, targetX, targetY);
+
+    human->giveManualAction(Action::eat(targetX, targetY));
+}
+
+void HumanInspector::drinkFacingTile()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    int targetX;
+    int targetY;
+
+    getFacingTarget(*human, targetX, targetY);
+
+    human->giveManualAction(Action::drink(targetX, targetY));
+}
+
+void HumanInspector::attackFacingTile()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    int targetX;
+    int targetY;
+
+    getFacingTarget(*human, targetX, targetY);
+
+    human->giveManualAction(Action::attack(targetX, targetY));
 }
 
 void HumanInspector::handleEvents(GameWorld& world)
@@ -107,208 +292,56 @@ void HumanInspector::handleEvents(GameWorld& world)
             continue;
         }
 
-        if (event.key.code == sf::Keyboard::Right)
-        {
-            moveToNextHuman();
-        }
-
-        if (event.key.code == sf::Keyboard::Left)
-        {
-            moveToPreviousHuman();
-        }
-
-        if (event.key.code == sf::Keyboard::W)
-        {
-            moveSelectedHuman(Direction::Up, world);
-        }
-
-        if (event.key.code == sf::Keyboard::A)
-        {
-            moveSelectedHuman(Direction::Left, world);
-        }
-
-        if (event.key.code == sf::Keyboard::S)
-        {
-            moveSelectedHuman(Direction::Down, world);
-        }
-
-        if (event.key.code == sf::Keyboard::D)
-        {
-            moveSelectedHuman(Direction::Right, world);
-        }
-
-        if (event.key.code == sf::Keyboard::E)
-        {
-            std::vector<Human>& humans = Human::getHumans();
-
-            if (!humans.empty())
-            {
-                if (
-                    selectedHumanIndex < 0 ||
-                    selectedHumanIndex >= static_cast<int>(humans.size())
-                )
-                {
-                    selectedHumanIndex = 0;
-                }
-
-                int targetX;
-                int targetY;
-                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
-                humans[selectedHumanIndex].giveManualAction(Action::eat(targetX, targetY));
-            }
-        }
-
-        if (event.key.code == sf::Keyboard::R)
-        {
-            std::vector<Human>& humans = Human::getHumans();
-
-            if (!humans.empty())
-            {
-                if (
-                    selectedHumanIndex < 0 ||
-                    selectedHumanIndex >= static_cast<int>(humans.size())
-                )
-                {
-                    selectedHumanIndex = 0;
-                }
-
-                int targetX;
-                int targetY;
-                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
-                humans[selectedHumanIndex].giveManualAction(Action::drink(targetX, targetY));
-            }
-        }
-
-        if (event.key.code == sf::Keyboard::F)
-        {
-            std::vector<Human>& humans = Human::getHumans();
-
-            if (!humans.empty())
-            {
-                if (
-                    selectedHumanIndex < 0 ||
-                    selectedHumanIndex >= static_cast<int>(humans.size())
-                )
-                {
-                    selectedHumanIndex = 0;
-                }
-
-                int targetX;
-                int targetY;
-                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
-                humans[selectedHumanIndex].giveManualAction(Action::attack(targetX, targetY));
-            }
-        }
-
-
         if (event.key.code == sf::Keyboard::Escape)
         {
             close();
             return;
         }
-    }
-}
-
-void HumanInspector::moveSelectedHuman(Direction direction, GameWorld& world)
-{
-    std::vector<Human>& humans = Human::getHumans();
-
-    if (humans.empty())
-    {
-        return;
-    }
-
-    if (
-        selectedHumanIndex < 0 ||
-        selectedHumanIndex >= static_cast<int>(humans.size())
-    )
-    {
-        selectedHumanIndex = 0;
-    }
-
-    Human& human = humans[selectedHumanIndex];
-
-    if (human.isDead())
-    {
-        return;
-    }
-
-    human.giveManualAction(Action::move(direction));
-}
-
-void HumanInspector::updateInspectedHumanId()
-{
-    std::vector<Human>& humans = Human::getHumans();
-
-    if (humans.empty())
-    {
-        Human::clearInspectedHuman();
-        return;
-    }
-
-    if (selectedHumanIndex < 0)
-    {
-        selectedHumanIndex = 0;
-    }
-
-    if (selectedHumanIndex >= static_cast<int>(humans.size()))
-    {
-        selectedHumanIndex = 0;
-    }
-
-    for (int i = 0; i < static_cast<int>(humans.size()); ++i)
-    {
-        if (i == selectedHumanIndex)
+        else if (event.key.code == sf::Keyboard::Right)
         {
-            humans[i].setManualBrain();
+            moveToNextHuman();
         }
-        else if (!humans[i].isDead())
+        else if (event.key.code == sf::Keyboard::Left)
         {
-            humans[i].setRandomBrain();
+            moveToPreviousHuman();
+        }
+        else if (event.key.code == sf::Keyboard::W)
+        {
+            moveSelectedHuman(Direction::Up);
+        }
+        else if (event.key.code == sf::Keyboard::A)
+        {
+            moveSelectedHuman(Direction::Left);
+        }
+        else if (event.key.code == sf::Keyboard::S)
+        {
+            moveSelectedHuman(Direction::Down);
+        }
+        else if (event.key.code == sf::Keyboard::D)
+        {
+            moveSelectedHuman(Direction::Right);
+        }
+        else if (event.key.code == sf::Keyboard::E)
+        {
+            eatFacingTile();
+        }
+        else if (event.key.code == sf::Keyboard::R)
+        {
+            drinkFacingTile();
+        }
+        else if (event.key.code == sf::Keyboard::F)
+        {
+            attackFacingTile();
+        }
+        else if (event.key.code == sf::Keyboard::C)
+        {
+            pickUpItem();
+        }
+        else if (event.key.code == sf::Keyboard::V)
+        {
+            dropItem();
         }
     }
-
-    Human::setInspectedHumanId(humans[selectedHumanIndex].getId());
-}
-
-
-void HumanInspector::moveToNextHuman()
-{
-    std::vector<Human>& humans = Human::getHumans();
-
-    if (humans.empty())
-    {
-        Human::clearInspectedHuman();
-        return;
-    }
-
-    selectedHumanIndex++;
-
-    if (selectedHumanIndex >= static_cast<int>(humans.size()))
-    {
-        selectedHumanIndex = 0;
-    }
-
-    updateInspectedHumanId();
-}
-
-void HumanInspector::moveToPreviousHuman()
-{
-    std::vector<Human>& humans = Human::getHumans();
-
-    if (humans.empty())
-    {
-        return;
-    }
-
-    selectedHumanIndex--;
-
-    if (selectedHumanIndex < 0)
-    {
-        selectedHumanIndex = static_cast<int>(humans.size()) - 1;
-    }
-
-    updateInspectedHumanId();
 }
 
 void HumanInspector::draw(GameWorld& world)
@@ -348,14 +381,35 @@ void HumanInspector::draw(GameWorld& world)
         return;
     }
 
-    if (selectedHumanIndex >= static_cast<int>(humans.size()))
+    if (
+        selectedHumanIndex < 0 ||
+        selectedHumanIndex >= static_cast<int>(humans.size())
+    )
     {
         selectedHumanIndex = 0;
     }
 
-    const Human& human = humans[selectedHumanIndex];
+    if (humans[selectedHumanIndex].isDead())
+    {
+        moveToNextHuman();
+    }
 
-    Human::setInspectedHumanId(human.getId());
+    Human* selectedHuman = getSelectedHuman();
+
+    if (selectedHuman == nullptr)
+    {
+        drawCenteredText(
+            "No living humans to inspect.",
+            Config::INSPECTOR_WINDOW_WIDTH / 2.0f,
+            60.0f,
+            24
+        );
+
+        window.display();
+        return;
+    }
+
+    const Human& human = *selectedHuman;
 
     drawVision(human, world);
     drawInventory(human);
@@ -380,7 +434,7 @@ void HumanInspector::drawInventory(const Human& human)
     float startY = 290.0f;
     float tileSize = 24.0f;
     float spacing = 5.0f;
-    float title_inventory_space = 15.0f;
+    float titleInventorySpace = 15.0f;
 
     int slotCount = Config::HUMAN_INVENTORY_SIZE;
 
@@ -397,7 +451,7 @@ void HumanInspector::drawInventory(const Human& human)
     for (int i = 0; i < slotCount; ++i)
     {
         float slotX = startX + i * (tileSize + spacing);
-        float slotY = startY + title_inventory_space;
+        float slotY = startY + titleInventorySpace;
 
         sf::RectangleShape slot;
         slot.setSize(sf::Vector2f(tileSize, tileSize));
@@ -676,4 +730,28 @@ sf::Color HumanInspector::getColorFromTile(TileType tile) const
     }
 
     return DayNight::apply(color);
+}
+
+void HumanInspector::pickUpItem()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    human->giveManualAction(Action::pickUp());
+}
+
+void HumanInspector::dropItem()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr)
+    {
+        return;
+    }
+
+    human->giveManualAction(Action::drop());
 }
