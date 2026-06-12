@@ -1,4 +1,4 @@
-#include "core/daynight.h"
+#include "environment/daynight.h"
 #include "core/config.h"
 
 #include <algorithm>

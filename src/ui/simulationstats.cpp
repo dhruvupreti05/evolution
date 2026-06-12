@@ -1,11 +1,11 @@
 #include "ui/simulationstats.h"
 #include "core/config.h"
-#include "core/daynight.h"
-#include "core/weather.h"
+#include "environment/daynight.h"
+#include "environment/weather.h"
 #include "entities/human.h"
 #include "entities/predator.h"
-#include "terrain/lake.h"
-#include "resources/crop.h"
+#include "environment/lake.h"
+#include "entities/crop.h"
 #include "core/paths.h"
 
 #include <algorithm>

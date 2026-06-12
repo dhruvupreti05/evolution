@@ -3,7 +3,8 @@
 #include <vector>
 
 #include "core/gameworld.h"
-#include "entities/human.h"
+#include "entities/entity.h"
+#include "entities/direction.h"
 
 enum class PredatorType
 {
@@ -11,67 +12,45 @@ enum class PredatorType
     Water
 };
 
-class Predator
+class Predator : public Entity
 {
 public:
     Predator(int gridX, int gridY, PredatorType type);
 
-    void update(GameWorld& world);
-    void draw(GameWorld& world) const;
+    void update(GameWorld& world) override;
+    void draw(GameWorld& world) const override;
+
+    bool tryMove(Direction direction, GameWorld& world) override;
+    bool tryEatAt(GameWorld& world, int targetX, int targetY) override;
+    bool tryDrinkAt(GameWorld& world, int targetX, int targetY) override;
+    bool tryAttackAt(GameWorld& world, int targetX, int targetY) override;
 
     static void init(GameWorld& world);
     static void updatePredators(GameWorld& world);
     static void drawPredators(GameWorld& world);
+    static void drawBodies(GameWorld& world);
 
     static bool isPredatorAt(int x, int y);
 
-    int getX() const;
-    int getY() const;
-
-    bool isDead() const;
     bool hasBody() const;
 
     static int countAlive();
     static int countDead();
 
-    static void drawBodies(GameWorld& world);
-
     static void killWaterPredatorsNotOnWater(GameWorld& world);
-
     static const std::vector<Predator>& getPredators();
 
 private:
     static std::vector<Predator> predators;
 
     int deadBodyTicksRemaining = 0;
-
-    int x;
-    int y;
-
-    int health;
-    int thirst;
-    int hunger;
-
     PredatorType type;
-    bool dead = false;
 
-    void decayStats();
-    void checkDeath();
+    void decayStats() override;
+    void checkDeath() override;
 
     bool isLandPredator() const;
     bool isWaterPredator() const;
-
-    bool isThirstMode() const;
-
-    void updateHungerMode(GameWorld& world);
-    void updateThirstMode(GameWorld& world);
-    void moveRandomly(GameWorld& world);
-
-    bool tryEatAdjacentBody();
-    bool tryAttackAdjacentLivingHuman();
-
-    bool tryDrinkAdjacentWater(GameWorld& world);
-    void moveToward(GameWorld& world, int targetX, int targetY);
 
     bool canMoveTo(GameWorld& world, int targetX, int targetY) const;
 };

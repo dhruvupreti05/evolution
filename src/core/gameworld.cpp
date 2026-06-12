@@ -1,5 +1,5 @@
 #include "core/gameworld.h"
-#include "core/daynight.h"
+#include "environment/daynight.h"
 #include "core/config.h"
 
 #include <cmath>

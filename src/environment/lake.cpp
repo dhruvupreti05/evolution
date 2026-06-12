@@ -1,11 +1,13 @@
-#include "lake.h"
+#include "environment/lake.h"
 #include "core/config.h"
 
 #include <cstdlib>
 #include <cmath>
 #include <limits>
+#include <map>
 
 std::vector<Lake> Lake::lakes;
+std::map<GridPos, int> Lake::waterDrinkTicksRemaining;
 
 struct LakeSpawnPoint
 {
@@ -288,6 +290,7 @@ bool Lake::removeWaterAt(GameWorld& world, int x, int y)
         }
 
         rebuildLakeTerrain(world);
+        waterDrinkTicksRemaining.erase(GridPos{x, y});
         return true;
     }
 
@@ -478,6 +481,7 @@ void Lake::dryAll(GameWorld& world, int layers)
         }
     }
 
+    resetWaterDrinkingProgressForMissingWater();
     rebuildLakeTerrain(world);
 }
 
@@ -491,4 +495,60 @@ int Lake::getTotalWaterBlocks()
     }
 
     return count;
+}
+
+bool Lake::drinkWaterAt(GameWorld& world, int x, int y)
+{
+    if (!world.isInsideGrid(x, y))
+    {
+        return false;
+    }
+
+    if (world.getTile(x, y) != TileType::Water)
+    {
+        return false;
+    }
+
+    GridPos pos{x, y};
+
+    if (waterDrinkTicksRemaining.count(pos) == 0)
+    {
+        waterDrinkTicksRemaining[pos] = Config::TICKS_PER_WATER_BLOCK_DRINKING;
+    }
+
+    waterDrinkTicksRemaining[pos]--;
+
+    if (waterDrinkTicksRemaining[pos] <= 0)
+    {
+        waterDrinkTicksRemaining.erase(pos);
+        return removeWaterAt(world, x, y);
+    }
+
+    return true;
+}
+
+void Lake::resetWaterDrinkingProgressForMissingWater()
+{
+    for (auto it = waterDrinkTicksRemaining.begin(); it != waterDrinkTicksRemaining.end(); )
+    {
+        bool stillExists = false;
+
+        for (const auto& lake : lakes)
+        {
+            if (lake.containsWaterCell(it->first.x, it->first.y))
+            {
+                stillExists = true;
+                break;
+            }
+        }
+
+        if (!stillExists)
+        {
+            it = waterDrinkTicksRemaining.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 }

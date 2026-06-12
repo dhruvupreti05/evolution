@@ -5,12 +5,12 @@
 #include "core/config.h"
 #include "core/gameworld.h"
 #include "entities/human.h"
-#include "terrain/lake.h"
-#include "resources/crop.h"
+#include "environment/lake.h"
+#include "entities/crop.h"
 #include "ui/humaninspector.h"
-#include "core/daynight.h"
+#include "environment/daynight.h"
 #include "entities/predator.h"
-#include "core/weather.h"
+#include "environment/weather.h"
 #include "ui/simulationstats.h"
 
 int main()

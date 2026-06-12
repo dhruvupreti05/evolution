@@ -89,9 +89,6 @@ namespace Config
     constexpr int PREDATOR_THIRST_MODE_THRESHOLD = 500;
 
     constexpr int HEALTH_PER_PREDATOR_ATTACK = 500;
-    constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20; // how much a predator’s hunger stat increases each tick while eating a dead human body
-    constexpr int TICKS_PER_MEAL_HUMAN = 10; // How many ticks
-    constexpr int PREDATOR_THIRST_PER_WATER_BLOCK = 200;
 
     constexpr int WEATHER_MIN_DAYS_BETWEEN = 1;
     constexpr int WEATHER_MAX_DAYS_BETWEEN = 2;
@@ -102,5 +99,18 @@ namespace Config
     // Stats window settings
     constexpr int STATS_WINDOW_WIDTH = 560;
     constexpr int STATS_WINDOW_HEIGHT = 430;
+
+    // Crop eating settings
+    constexpr int TICKS_PER_MEAL_CROP = 5;
+    constexpr int HUNGER_PER_TICK_MEAL_CROP = 20;
+
+    // Body eating settings
+    constexpr int HUNGER_PER_TICK_MEAL_HUMAN = 20;
+    constexpr int TICKS_PER_MEAL_HUMAN = 10;
+
+    // Water drinking settings
+    constexpr int TICKS_PER_WATER_BLOCK_DRINKING = 5;
+    constexpr int HUMAN_THIRST_PER_TICK_WATER = 30;
+    constexpr int PREDATOR_THIRST_PER_TICK_WATER = 50;
 
 }

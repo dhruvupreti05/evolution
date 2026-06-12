@@ -1,4 +1,4 @@
-#include "terrain/clumps.h"
+#include "environment/clumps.h"
 
 #include <cstdlib>
 #include <queue>

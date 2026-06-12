@@ -1,9 +1,12 @@
 #include "entities/predator.h"
-
 #include "core/config.h"
-#include "terrain/lake.h"
+#include "environment/lake.h"
+#include "entities/brain.h"
+#include "entities/action.h"
+#include "entities/human.h"
 
 #include <cstdlib>
+#include <memory>
 #include <cmath>
 
 std::vector<Predator> Predator::predators;
@@ -79,13 +82,16 @@ namespace
 }
 
 Predator::Predator(int gridX, int gridY, PredatorType type)
-    : x(gridX),
-      y(gridY),
-      health(Config::PREDATOR_START_HEALTH),
-      thirst(Config::PREDATOR_START_THIRST),
-      hunger(Config::PREDATOR_START_HUNGER),
+    : Entity(
+          gridX,
+          gridY,
+          Config::PREDATOR_START_HEALTH,
+          Config::PREDATOR_START_THIRST,
+          Config::PREDATOR_START_HUNGER
+      ),
       type(type)
 {
+    setBrain(std::make_unique<PredatorSmartBrain>());
 }
 
 void Predator::init(GameWorld& world)
@@ -141,26 +147,7 @@ void Predator::update(GameWorld& world)
         return;
     }
 
-    decayStats();
-    checkDeath();
-
-    if (dead)
-    {
-        return;
-    }
-
-    if (isThirstMode())
-    {
-        updateThirstMode(world);
-        return;
-    }
-
-    updateHungerMode(world);
-}
-
-bool Predator::isDead() const
-{
-    return dead;
+    Entity::update(world);
 }
 
 bool Predator::hasBody() const
@@ -229,230 +216,6 @@ bool Predator::isWaterPredator() const
     return type == PredatorType::Water;
 }
 
-bool Predator::isThirstMode() const
-{
-    return thirst <= Config::PREDATOR_THIRST_MODE_THRESHOLD;
-}
-
-void Predator::updateHungerMode(GameWorld& world)
-{
-    if (tryEatAdjacentBody())
-    {
-        return;
-    }
-
-    if (tryAttackAdjacentLivingHuman())
-    {
-        return;
-    }
-
-    Human* target = Human::getNearestLivingHumanOrBody(x, y);
-
-    if (target == nullptr)
-    {
-        moveRandomly(world);
-        return;
-    }
-
-    moveToward(world, target->getX(), target->getY());
-}
-
-void Predator::updateThirstMode(GameWorld& world)
-{
-    if (tryDrinkAdjacentWater(world))
-    {
-        return;
-    }
-
-    int bestX = -1;
-    int bestY = -1;
-    int bestDistance = 0;
-
-    for (int yy = 0; yy < world.getGridHeight(); ++yy)
-    {
-        for (int xx = 0; xx < world.getGridWidth(); ++xx)
-        {
-            if (world.getTile(xx, yy) != TileType::Water)
-            {
-                continue;
-            }
-
-            int distance = manhattanDistance(x, y, xx, yy);
-
-            if (bestX == -1 || distance < bestDistance)
-            {
-                bestX = xx;
-                bestY = yy;
-                bestDistance = distance;
-            }
-        }
-    }
-
-    if (bestX == -1)
-    {
-        moveRandomly(world);
-        return;
-    }
-
-    moveToward(world, bestX, bestY);
-}
-
-bool Predator::tryEatAdjacentBody()
-{
-    Human* body = Human::getAdjacentEdibleBody(x, y);
-
-    if (body == nullptr)
-    {
-        return false;
-    }
-
-    body->claimBodyForEating();
-    body->eatBodyOneTick();
-
-    hunger += Config::HUNGER_PER_TICK_MEAL_HUMAN;
-
-    if (hunger > Config::PREDATOR_START_HUNGER)
-    {
-        hunger = Config::PREDATOR_START_HUNGER;
-    }
-
-    return true;
-}
-
-bool Predator::tryAttackAdjacentLivingHuman()
-{
-    Human* human = Human::getAdjacentLivingHuman(x, y);
-
-    if (human == nullptr)
-    {
-        return false;
-    }
-
-    human->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK);
-
-    return true;
-}
-
-bool Predator::tryDrinkAdjacentWater(GameWorld& world)
-{
-    const int directions[4][2] = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    };
-
-    for (const auto& direction : directions)
-    {
-        int waterX = x + direction[0];
-        int waterY = y + direction[1];
-
-        if (!world.isInsideGrid(waterX, waterY))
-        {
-            continue;
-        }
-
-        if (world.getTile(waterX, waterY) != TileType::Water)
-        {
-            continue;
-        }
-
-        if (!Lake::removeWaterAt(world, waterX, waterY))
-        {
-            continue;
-        }
-
-        thirst += Config::PREDATOR_THIRST_PER_WATER_BLOCK;
-
-        if (thirst > Config::PREDATOR_START_THIRST)
-        {
-            thirst = Config::PREDATOR_START_THIRST;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-void Predator::moveRandomly(GameWorld& world)
-{
-    int choice = rand() % 5;
-
-    int dx = 0;
-    int dy = 0;
-
-    switch (choice)
-    {
-        case 1:
-            dy = -1;
-            break;
-
-        case 2:
-            dy = 1;
-            break;
-
-        case 3:
-            dx = -1;
-            break;
-
-        case 4:
-            dx = 1;
-            break;
-
-        case 0:
-        default:
-            break;
-    }
-
-    int targetX = x + dx;
-    int targetY = y + dy;
-
-    if (canMoveTo(world, targetX, targetY))
-    {
-        x = targetX;
-        y = targetY;
-    }
-}
-
-void Predator::moveToward(GameWorld& world, int targetX, int targetY)
-{
-    int bestX = x;
-    int bestY = y;
-    int bestDistance = manhattanDistance(x, y, targetX, targetY);
-
-    const int directions[4][2] = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    };
-
-    for (const auto& direction : directions)
-    {
-        int candidateX = x + direction[0];
-        int candidateY = y + direction[1];
-
-        if (!canMoveTo(world, candidateX, candidateY))
-        {
-            continue;
-        }
-
-        int candidateDistance =
-            manhattanDistance(candidateX, candidateY, targetX, targetY);
-
-        if (candidateDistance < bestDistance)
-        {
-            bestDistance = candidateDistance;
-            bestX = candidateX;
-            bestY = candidateY;
-        }
-    }
-
-    x = bestX;
-    y = bestY;
-}
-
 bool Predator::canMoveTo(GameWorld& world, int targetX, int targetY) const
 {
     if (!world.isInsideGrid(targetX, targetY))
@@ -518,16 +281,6 @@ bool Predator::isPredatorAt(int x, int y)
     return false;
 }
 
-int Predator::getX() const
-{
-    return x;
-}
-
-int Predator::getY() const
-{
-    return y;
-}
-
 int Predator::countAlive()
 {
     int count = 0;
@@ -590,4 +343,113 @@ void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
 const std::vector<Predator>& Predator::getPredators()
 {
     return predators;
+}
+
+bool Predator::tryMove(Direction direction, GameWorld& world)
+{
+    int dx = 0;
+    int dy = 0;
+
+    switch (direction)
+    {
+        case Direction::Up:
+            dy = -1;
+            break;
+        case Direction::Down:
+            dy = 1;
+            break;
+        case Direction::Left:
+            dx = -1;
+            break;
+        case Direction::Right:
+            dx = 1;
+            break;
+        case Direction::Stay:
+        default:
+            return false;
+    }
+
+    int targetX = x + dx;
+    int targetY = y + dy;
+
+    if (!canMoveTo(world, targetX, targetY))
+    {
+        return false;
+    }
+
+    x = targetX;
+    y = targetY;
+    return true;
+}
+
+bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
+{
+    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    {
+        return false;
+    }
+
+    Human* body = Human::getAdjacentEdibleBody(x, y);
+
+    if (body == nullptr)
+    {
+        return false;
+    }
+
+    if (body->getX() != targetX || body->getY() != targetY)
+    {
+        return false;
+    }
+
+    body->eatBodyOneTick();
+
+    increaseHunger(
+        Config::HUNGER_PER_TICK_MEAL_HUMAN,
+        Config::PREDATOR_START_HUNGER
+    );
+
+    return true;
+}
+
+bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
+{
+    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    {
+        return false;
+    }
+
+    if (!Lake::drinkWaterAt(world, targetX, targetY))
+    {
+        return false;
+    }
+
+    increaseThirst(
+        Config::PREDATOR_THIRST_PER_TICK_WATER,
+        Config::PREDATOR_START_THIRST
+    );
+
+    return true;
+}
+
+bool Predator::tryAttackAt(GameWorld& world, int targetX, int targetY)
+{
+    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    {
+        return false;
+    }
+
+    Human* human = Human::getAdjacentLivingHuman(x, y);
+
+    if (human == nullptr)
+    {
+        return false;
+    }
+
+    if (human->getX() != targetX || human->getY() != targetY)
+    {
+        return false;
+    }
+
+    human->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK);
+    return true;
 }

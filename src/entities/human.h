@@ -5,15 +5,9 @@
 #include <string>
 
 #include "core/gameworld.h"
-
-enum class Direction
-{
-    Stay,
-    Up,
-    Down,
-    Left,
-    Right
-};
+#include "entities/entity.h"
+#include "entities/food.h"
+#include "entities/direction.h"
 
 enum class Orientation
 {
@@ -46,15 +40,29 @@ struct VisibleTile
     int worldX = 0;
     int worldY = 0;
 };
+struct Action;
 
-class Human
+
+class Human : public Entity, public Food
 {
 public:
     Human(int gridX, int gridY);
+    bool isEdible() const override;
 
-    void update(GameWorld& world);
+    bool tryMove(Direction direction, GameWorld& world) override;
+    bool tryEatAt(GameWorld& world, int targetX, int targetY) override;
+    bool tryDrinkAt(GameWorld& world, int targetX, int targetY) override;
+    bool tryAttackAt(GameWorld& world, int targetX, int targetY) override;
+
+    void setManualBrain();
+    void setRandomBrain();
+    void giveManualAction(const Action& action);
+
+
     void moveRandomly(GameWorld& world);
-    void draw(GameWorld& world) const;
+
+    void update(GameWorld& world) override;
+    void draw(GameWorld& world) const override;
 
     static void init(GameWorld& world);
     static void updateHumans(GameWorld& world);
@@ -95,8 +103,6 @@ public:
 
     static bool isHumanAt(int x, int y);
 
-    void takeDamage(int amount);
-
     bool hasBody() const;
     bool isBodyEdible() const;
     bool isBodyClaimedThisTick() const;
@@ -117,8 +123,6 @@ public:
 
 private:
     int deadBodyTicksRemaining = 0;
-    int bodyMealTicksRemaining = 0;
-    bool bodyClaimedThisTick = false;
     
     static std::vector<Human> humans;
     static int nextId;
@@ -126,28 +130,21 @@ private:
 
     static constexpr int MOVE_MEMORY_SIZE = 10;
 
-    int x;
-    int y;
-
     Orientation orientation = Orientation::South;
 
     std::array<MoveAttempt, MOVE_MEMORY_SIZE> previousMoves;
     int moveMemoryIndex = 0;
     int moveMemoryCount = 0;
 
-    int health;
-    int thirst;
-    int hunger;
     int age;
 
     Gender gender;
     int id;
 
-    bool dead = false;
-
     void move(Direction direction, GameWorld& world);
-    void decayStats();
-    void checkDeath();
+
+    void decayStats() override;
+    void checkDeath() override;
 
     void recordMoveAttempt(MoveAttempt attempt);
     MoveAttempt getPreviousMove() const;

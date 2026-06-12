@@ -5,7 +5,8 @@
 
 #include "core/gameworld.h"
 #include "entities/human.h"
-#include "core/daynight.h"
+#include "environment/daynight.h"
+#include "entities/action.h"
 
 class HumanInspector
 {

@@ -1,4 +1,4 @@
-#include "block.h"
+#include "rendering/block.h"
 
 Block::Block(int gridX, int gridY, int size, sf::Color color) : gridX(gridX), gridY(gridY), size(size)
 {

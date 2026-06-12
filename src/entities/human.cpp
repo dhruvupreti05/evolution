@@ -1,8 +1,10 @@
 #include "human.h"
 #include "core/config.h"
-#include "terrain/lake.h"
-#include "resources/crop.h"
+#include "environment/lake.h"
+#include "entities/crop.h"
 #include "entities/predator.h"
+#include "entities/brain.h"
+#include "entities/action.h"
 
 #include <cstdlib>
 #include <set>
@@ -21,15 +23,26 @@ static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
     return dx + dy == 1;
 }
 
-Human::Human(int gridX, int gridY) : x(gridX),
-      y(gridY),
-      health(Config::HUMAN_START_HEALTH + (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) - Config::HUMAN_START_HEALTH_BUFFER)),
-      thirst(Config::HUMAN_START_THIRST + (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) - Config::HUMAN_START_THIRST_BUFFER)),
-      hunger(Config::HUMAN_START_HUNGER + (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) - Config::HUMAN_START_HUNGER_BUFFER)),
+Human::Human(int gridX, int gridY)
+    : Entity(
+          gridX,
+          gridY,
+          Config::HUMAN_START_HEALTH +
+              (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) -
+               Config::HUMAN_START_HEALTH_BUFFER),
+          Config::HUMAN_START_THIRST +
+              (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) -
+               Config::HUMAN_START_THIRST_BUFFER),
+          Config::HUMAN_START_HUNGER +
+              (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) -
+               Config::HUMAN_START_HUNGER_BUFFER)
+      ),
+      Food(Config::TICKS_PER_MEAL_HUMAN, Config::HUNGER_PER_TICK_MEAL_HUMAN),
       age(0),
       gender((rand() % 2 == 0) ? Gender::Male : Gender::Female),
       id(nextId++)
 {
+    setRandomBrain();
 }
 
 void Human::init(GameWorld& world)
@@ -62,72 +75,35 @@ void Human::update(GameWorld& world)
         return;
     }
 
-    decayStats();
-    checkDeath();
-
-    if (dead)
-    {
-        return;
-    }
-
-    if (id == inspectedHumanId)
-    {
-        return;
-    }
-
-    moveRandomly(world);
-}
-
-void Human::takeDamage(int amount)
-{
-    if (dead)
-    {
-        return;
-    }
-
-    health -= amount;
-
-    if (health < 0)
-    {
-        health = 0;
-    }
-
-    checkDeath();
+    Entity::update(world);
 }
 
 bool Human::hasBody() const
 {
-    return dead && deadBodyTicksRemaining > 0 && bodyMealTicksRemaining > 0;
+    return isEdible();
 }
 
 bool Human::isBodyEdible() const
 {
-    return hasBody();
+    return isEdible();
 }
 
 bool Human::isBodyClaimedThisTick() const
 {
-    return bodyClaimedThisTick;
+    return false;
 }
 
 void Human::claimBodyForEating()
 {
-    bodyClaimedThisTick = true;
+}
+
+void Human::resetBodyEatingClaims()
+{
 }
 
 void Human::eatBodyOneTick()
 {
-    if (!hasBody())
-    {
-        return;
-    }
-
-    bodyMealTicksRemaining--;
-
-    if (bodyMealTicksRemaining < 0)
-    {
-        bodyMealTicksRemaining = 0;
-    }
+    eatOneTick();
 }
 
 void Human::decayStats()
@@ -164,8 +140,7 @@ void Human::checkDeath()
     {
         dead = true;
         deadBodyTicksRemaining = Config::TICKS_PER_DEAD_BODY;
-        bodyMealTicksRemaining = Config::TICKS_PER_MEAL_HUMAN;
-        bodyClaimedThisTick = false;
+        mealTicksRemaining = Config::TICKS_PER_MEAL_HUMAN;
     }
 }
 
@@ -566,14 +541,6 @@ void Human::drawBodies(GameWorld& world)
     }
 }
 
-void Human::resetBodyEatingClaims()
-{
-    for (auto& human : humans)
-    {
-        human.bodyClaimedThisTick = false;
-    }
-}
-
 void Human::updateHumans(GameWorld& world)
 {
     for (auto& human : humans)
@@ -840,6 +807,11 @@ bool Human::canDropOn(TileType tile, int targetX, int targetY) const
     return true;
 }
 
+bool Human::isEdible() const
+{
+    return dead && deadBodyTicksRemaining > 0 && Food::isEdible();
+}
+
 bool Human::tryPickUp(GameWorld& world)
 {
     if (dead)
@@ -870,7 +842,7 @@ bool Human::tryPickUp(GameWorld& world)
 
     if (tile == TileType::Crop)
     {
-        Crop::removeCropAt(targetX, targetY);
+        Crop::removeCropAt(world, targetX, targetY);
         world.setTile(targetX, targetY, TileType::Empty);
         inventory.push_back(TileType::Crop);
         return true;
@@ -1029,11 +1001,6 @@ Human* Human::getAdjacentEdibleBody(int x, int y)
             continue;
         }
 
-        if (human.isBodyClaimedThisTick())
-        {
-            continue;
-        }
-
         if (isFourNeighborDistance(x, y, human.getX(), human.getY()))
         {
             return &human;
@@ -1099,4 +1066,84 @@ int Human::countDead()
     }
 
     return count;
+}
+
+bool Human::tryMove(Direction direction, GameWorld& world)
+{
+    move(direction, world);
+    return true;
+}
+
+bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
+{
+    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    {
+        return false;
+    }
+
+    if (world.getTile(targetX, targetY) != TileType::Crop)
+    {
+        return false;
+    }
+
+    int hungerGain = 0;
+
+    if (!Crop::eatCropAt(world, targetX, targetY, hungerGain))
+    {
+        return false;
+    }
+
+    increaseHunger(hungerGain, Config::HUMAN_START_HUNGER);
+    return true;
+}
+
+bool Human::tryDrinkAt(GameWorld& world, int targetX, int targetY)
+{
+    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    {
+        return false;
+    }
+
+    if (!Lake::drinkWaterAt(world, targetX, targetY))
+    {
+        return false;
+    }
+
+    increaseThirst(
+        Config::HUMAN_THIRST_PER_TICK_WATER,
+        Config::HUMAN_START_THIRST
+    );
+
+    return true;
+}
+
+bool Human::tryAttackAt(GameWorld& world, int targetX, int targetY)
+{
+    return false;
+}
+
+void Human::setRandomBrain()
+{
+    setBrain(std::make_unique<RandomBrain>());
+}
+
+void Human::setManualBrain()
+{
+    setBrain(std::make_unique<ManualBrain>());
+}
+
+void Human::giveManualAction(const Action& action)
+{
+    ManualBrain* manualBrain = dynamic_cast<ManualBrain*>(getBrain());
+
+    if (manualBrain == nullptr)
+    {
+        setManualBrain();
+        manualBrain = dynamic_cast<ManualBrain*>(getBrain());
+    }
+
+    if (manualBrain != nullptr)
+    {
+        manualBrain->setNextAction(action);
+    }
 }

@@ -1,9 +1,39 @@
 #include "humaninspector.h"
 #include "core/config.h"
+#include "entities/action.h"
 
 #include <vector>
 #include <string>
 #include <iostream>
+
+namespace
+{
+    void getFacingTarget(const Human& human, int& targetX, int& targetY)
+    {
+        targetX = human.getX();
+        targetY = human.getY();
+
+        switch (human.getOrientation())
+        {
+            case Orientation::North:
+                targetY--;
+                break;
+
+            case Orientation::South:
+                targetY++;
+                break;
+
+            case Orientation::East:
+                targetX++;
+                break;
+
+            case Orientation::West:
+                targetX--;
+                break;
+        }
+    }
+}
+
 
 HumanInspector::HumanInspector()
 {
@@ -35,6 +65,16 @@ void HumanInspector::close()
     if (window.isOpen())
     {
         window.close();
+    }
+
+    std::vector<Human>& humans = Human::getHumans();
+
+    if (
+        selectedHumanIndex >= 0 &&
+        selectedHumanIndex < static_cast<int>(humans.size())
+    )
+    {
+        humans[selectedHumanIndex].setRandomBrain();
     }
 
     Human::clearInspectedHuman();
@@ -111,7 +151,10 @@ void HumanInspector::handleEvents(GameWorld& world)
                     selectedHumanIndex = 0;
                 }
 
-                humans[selectedHumanIndex].tryPickUp(world);
+                int targetX;
+                int targetY;
+                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
+                humans[selectedHumanIndex].giveManualAction(Action::eat(targetX, targetY));
             }
         }
 
@@ -129,9 +172,34 @@ void HumanInspector::handleEvents(GameWorld& world)
                     selectedHumanIndex = 0;
                 }
 
-                humans[selectedHumanIndex].tryDrop(world);
+                int targetX;
+                int targetY;
+                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
+                humans[selectedHumanIndex].giveManualAction(Action::drink(targetX, targetY));
             }
         }
+
+        if (event.key.code == sf::Keyboard::F)
+        {
+            std::vector<Human>& humans = Human::getHumans();
+
+            if (!humans.empty())
+            {
+                if (
+                    selectedHumanIndex < 0 ||
+                    selectedHumanIndex >= static_cast<int>(humans.size())
+                )
+                {
+                    selectedHumanIndex = 0;
+                }
+
+                int targetX;
+                int targetY;
+                getFacingTarget(humans[selectedHumanIndex], targetX, targetY);
+                humans[selectedHumanIndex].giveManualAction(Action::attack(targetX, targetY));
+            }
+        }
+
 
         if (event.key.code == sf::Keyboard::Escape)
         {
@@ -165,7 +233,7 @@ void HumanInspector::moveSelectedHuman(Direction direction, GameWorld& world)
         return;
     }
 
-    human.controlledMove(direction, world);
+    human.giveManualAction(Action::move(direction));
 }
 
 void HumanInspector::updateInspectedHumanId()
@@ -188,8 +256,21 @@ void HumanInspector::updateInspectedHumanId()
         selectedHumanIndex = 0;
     }
 
+    for (int i = 0; i < static_cast<int>(humans.size()); ++i)
+    {
+        if (i == selectedHumanIndex)
+        {
+            humans[i].setManualBrain();
+        }
+        else if (!humans[i].isDead())
+        {
+            humans[i].setRandomBrain();
+        }
+    }
+
     Human::setInspectedHumanId(humans[selectedHumanIndex].getId());
 }
+
 
 void HumanInspector::moveToNextHuman()
 {
