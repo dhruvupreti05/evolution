@@ -1204,7 +1204,8 @@ bool Human::canMateWith(const Human& other) const
 
 bool Human::tryMateAt(GameWorld& world, int targetX, int targetY)
 {
-    // Mating is resolved in Human::resolveMatingActions()
+    // Mating is not executed one entity at a time.
+    // Human::resolveMatingActions() handles it after all humans choose actions,
     // because both parents must choose Mate on the same tick.
     return false;
 }
