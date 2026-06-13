@@ -24,6 +24,8 @@ public:
     void addToWorld(GameWorld& world) const;
     void draw(GameWorld& world) const;
 
+    static bool getNearestWaterCell(int x, int y, int& waterX, int& waterY);
+
     const std::set<GridPos>& getSandCells() const;
 
     static bool removeWaterAt(GameWorld& world, int x, int y);

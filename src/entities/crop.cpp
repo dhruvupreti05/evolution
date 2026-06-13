@@ -1,5 +1,5 @@
 #include "entities/crop.h"
-
+#include "core/gridutils.h"
 #include "core/config.h"
 
 #include <algorithm>
@@ -150,4 +150,35 @@ void Crop::removeCropAt(int x, int y)
         ),
         crops.end()
     );
+}
+
+const std::vector<Crop>& Crop::getCrops()
+{
+    return crops;
+}
+
+bool Crop::getNearestCropCell(int x, int y, int& cropX, int& cropY)
+{
+    bool found = false;
+    int bestDistance = 0;
+
+    for (const Crop& crop : crops)
+    {
+        int distance = GridUtils::manhattanDistance(
+            x,
+            y,
+            crop.getX(),
+            crop.getY()
+        );
+
+        if (!found || distance < bestDistance)
+        {
+            found = true;
+            bestDistance = distance;
+            cropX = crop.getX();
+            cropY = crop.getY();
+        }
+    }
+
+    return found;
 }

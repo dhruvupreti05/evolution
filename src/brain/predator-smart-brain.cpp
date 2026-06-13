@@ -7,33 +7,15 @@
 #include "entities/human.h"
 #include "entities/crop.h"
 
+#include "core/gridutils.h"
+#include "environment/lake.h"
+
+#include "environment/lake.h"
+#include "core/gridutils.h"
+
 #include <cstdlib>
 #include <cmath>
 
-
-
-int PredatorSmartBrain::manhattanDistance(int x1, int y1, int x2, int y2) const
-{
-    return std::abs(x1 - x2) + std::abs(y1 - y2);
-}
-
-Direction PredatorSmartBrain::directionToward(
-    Entity& entity,
-    GameWorld& world,
-    int targetX,
-    int targetY
-) const
-{
-    int x = entity.getX();
-    int y = entity.getY();
-
-    if (targetX < x) return Direction::Left;
-    if (targetX > x) return Direction::Right;
-    if (targetY < y) return Direction::Up;
-    if (targetY > y) return Direction::Down;
-
-    return Direction::Stay;
-}
 
 Action PredatorSmartBrain::chooseAction(Entity& entity, GameWorld& world)
 {
@@ -63,17 +45,10 @@ Action PredatorSmartBrain::chooseAction(Entity& entity, GameWorld& world)
 
 Action PredatorSmartBrain::chooseThirstAction(Entity& entity, GameWorld& world)
 {
-    const int directions[4][2] = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    };
-
-    for (const auto& direction : directions)
+    for (const auto& direction : GridUtils::FOUR_DIRECTIONS)
     {
-        int waterX = entity.getX() + direction[0];
-        int waterY = entity.getY() + direction[1];
+        int waterX = entity.getX() + direction.dx;
+        int waterY = entity.getY() + direction.dy;
 
         if (!world.isInsideGrid(waterX, waterY))
         {
@@ -86,36 +61,22 @@ Action PredatorSmartBrain::chooseThirstAction(Entity& entity, GameWorld& world)
         }
     }
 
-    int bestX = -1;
-    int bestY = -1;
-    int bestDistance = 0;
+    int bestX;
+    int bestY;
 
-    for (int y = 0; y < world.getGridHeight(); ++y)
+    if (!Lake::getNearestWaterCell(entity.getX(), entity.getY(), bestX, bestY))
     {
-        for (int x = 0; x < world.getGridWidth(); ++x)
-        {
-            if (world.getTile(x, y) != TileType::Water)
-            {
-                continue;
-            }
-
-            int distance = manhattanDistance(entity.getX(), entity.getY(), x, y);
-
-            if (bestX == -1 || distance < bestDistance)
-            {
-                bestX = x;
-                bestY = y;
-                bestDistance = distance;
-            }
-        }
+        return Action::move(GridUtils::randomDirection());
     }
 
-    if (bestX == -1)
-    {
-        return Action::move(randomDirection());
-    }
-
-    return Action::move(directionToward(entity, world, bestX, bestY));
+    return Action::move(
+        GridUtils::directionToward(
+            entity.getX(),
+            entity.getY(),
+            bestX,
+            bestY
+        )
+    );
 }
 
 Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
@@ -138,23 +99,15 @@ Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
 
     if (target == nullptr)
     {
-        return Action::move(randomDirection());
+        return Action::move(GridUtils::randomDirection());
     }
 
-    return Action::move(directionToward(entity, world, target->getX(), target->getY()));
-}
-
-Direction PredatorSmartBrain::randomDirection() const
-{
-    int choice = rand() % 5;
-
-    switch (choice)
-    {
-        case 1: return Direction::Up;
-        case 2: return Direction::Down;
-        case 3: return Direction::Left;
-        case 4: return Direction::Right;
-        case 0:
-        default: return Direction::Stay;
-    }
+    return Action::move(
+        GridUtils::directionToward(
+            entity.getX(),
+            entity.getY(),
+            target->getX(),
+            target->getY()
+        )
+    );
 }

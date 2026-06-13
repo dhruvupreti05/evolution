@@ -1,5 +1,6 @@
 #include "brain/brain.h"
 #include "brain/random-brain.h"
+#include "core/gridutils.h"
 
 #include "core/config.h"
 #include "entities/entity.h"
@@ -11,51 +12,6 @@
 #include <cmath>
 
 
-Direction RandomBrain::randomDirection() const
-{
-    int choice = rand() % 5;
-
-    switch (choice)
-    {
-        case 1: return Direction::Up;
-        case 2: return Direction::Down;
-        case 3: return Direction::Left;
-        case 4: return Direction::Right;
-        case 0:
-        default: return Direction::Stay;
-    }
-}
-
-void RandomBrain::getNeighbor(
-    int x,
-    int y,
-    Direction direction,
-    int& outX,
-    int& outY
-) const
-{
-    outX = x;
-    outY = y;
-
-    switch (direction)
-    {
-        case Direction::Up:
-            outY--;
-            break;
-        case Direction::Down:
-            outY++;
-            break;
-        case Direction::Left:
-            outX--;
-            break;
-        case Direction::Right:
-            outX++;
-            break;
-        case Direction::Stay:
-        default:
-            break;
-    }
-}
 
 Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 {
@@ -87,7 +43,7 @@ Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
         }
     }
 
-    Direction direction = randomDirection();
+    Direction direction = GridUtils::randomDirection();
 
     if (direction == Direction::Stay)
     {
@@ -96,7 +52,13 @@ Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 
     int targetX;
     int targetY;
-    getNeighbor(entity.getX(), entity.getY(), direction, targetX, targetY);
+    GridUtils::getNeighbor(
+        entity.getX(),
+        entity.getY(),
+        direction,
+        targetX,
+        targetY
+    );
 
     if (!world.isInsideGrid(targetX, targetY))
     {

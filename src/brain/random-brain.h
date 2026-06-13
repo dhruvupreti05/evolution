@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "brain/brain.h"
@@ -9,14 +8,4 @@ class RandomBrain : public Brain
 {
 public:
     Action chooseAction(Entity& entity, GameWorld& world) override;
-
-private:
-    Direction randomDirection() const;
-    void getNeighbor(
-        int x,
-        int y,
-        Direction direction,
-        int& outX,
-        int& outY
-    ) const;
 };

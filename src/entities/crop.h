@@ -27,6 +27,9 @@ public:
 
     static int getCount();
 
+    static const std::vector<Crop>& getCrops();
+    static bool getNearestCropCell(int x, int y, int& cropX, int& cropY);
+
 private:
     int x;
     int y;

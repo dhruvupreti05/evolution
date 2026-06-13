@@ -1,6 +1,7 @@
 #include "core/gameworld.h"
 #include "environment/daynight.h"
 #include "core/config.h"
+#include "core/tilecolors.h"
 
 #include <cmath>
 
@@ -89,41 +90,7 @@ int GameWorld::getCellSize() const
 
 sf::Color GameWorld::getColorFromTile(TileType type) const
 {
-    sf::Color color;
-
-    switch (type)
-    {
-        case TileType::Water:
-            color = Config::COLOR_WATER;
-            break;
-
-        case TileType::Sand:
-            color = Config::COLOR_SAND;
-            break;
-
-        case TileType::Tree:
-            color = Config::COLOR_TREE;
-            break;
-
-        case TileType::Crop:
-            color = Config::COLOR_FOOD;
-            break;
-
-        case TileType::Human:
-            color = Config::COLOR_HUMAN;
-            break;
-
-        case TileType::Predator:
-            color = Config::COLOR_PREDATOR;
-            break;
-
-        case TileType::Empty:
-        default:
-            color = Config::COLOR_BACKGROUND;
-            break;
-    }
-
-    return DayNight::apply(color);
+    return TileColors::getDayNight(type);
 }
 
 void GameWorld::drawTile(int x, int y, TileType type)

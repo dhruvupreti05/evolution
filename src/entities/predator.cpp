@@ -3,11 +3,13 @@
 #include "environment/lake.h"
 #include "brain/predator-smart-brain.h"
 #include "entities/action.h"
+#include "core/debuglog.h"
 #include "entities/human.h"
 
 #include <cstdlib>
 #include <memory>
 #include <cmath>
+#include <set>
 
 std::vector<Predator> Predator::predators;
 int Predator::nextId = 0;
@@ -204,6 +206,19 @@ Predator* Predator::getAdjacentLivingPredator(
     return nullptr;
 }
 
+Predator* Predator::getById(int id)
+{
+    for (Predator& predator : predators)
+    {
+        if (predator.getId() == id)
+        {
+            return &predator;
+        }
+    }
+
+    return nullptr;
+}
+
 bool Predator::findChildSpawnCell(
     GameWorld& world,
     const Predator& parentA,
@@ -266,19 +281,11 @@ bool Predator::findChildSpawnCell(
 
 void Predator::resolveMatingActions(GameWorld& world)
 {
-    std::vector<int> alreadyMatedIds;
+    std::set<int> alreadyMatedIds;
 
     auto alreadyMated = [&](int id)
     {
-        for (int matedId : alreadyMatedIds)
-        {
-            if (matedId == id)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return alreadyMatedIds.count(id) > 0;
     };
 
     int originalCount = static_cast<int>(predators.size());
@@ -350,6 +357,25 @@ void Predator::resolveMatingActions(GameWorld& world)
             predators.emplace_back(childX, childY, childType);
             int childId = predators.back().getId();
 
+
+            DebugLog::birth("Predator", parentAId, parentBId, childId);
+
+            Predator* parentAAfterBirth = Predator::getById(parentAId);
+            Predator* parentBAfterBirth = Predator::getById(parentBId);
+
+            if (parentAAfterBirth != nullptr)
+            {
+                parentAAfterBirth->addChild(childId);
+                parentAAfterBirth->clearPreparedAction();
+            }
+
+            if (parentBAfterBirth != nullptr)
+            {
+                parentBAfterBirth->addChild(childId);
+                parentBAfterBirth->clearPreparedAction();
+            }
+
+
             for (auto& predator : predators)
             {
                 if (predator.getId() == parentAId || predator.getId() == parentBId)
@@ -359,8 +385,9 @@ void Predator::resolveMatingActions(GameWorld& world)
                 }
             }
 
-            alreadyMatedIds.push_back(parentAId);
-            alreadyMatedIds.push_back(parentBId);
+            alreadyMatedIds.insert(parentAId);
+            alreadyMatedIds.insert(parentBId);
+
             break;
         }
     }

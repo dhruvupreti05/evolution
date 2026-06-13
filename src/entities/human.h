@@ -58,7 +58,7 @@ public:
     void setRandomBrain();
     void giveManualAction(const Action& action);
 
-
+    static Human* getById(int id);
     void moveRandomly(GameWorld& world);
 
     void update(GameWorld& world) override;

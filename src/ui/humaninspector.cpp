@@ -2,6 +2,8 @@
 
 #include "core/config.h"
 #include "environment/daynight.h"
+#include "core/tilecolors.h"
+#include "ui/uidrawhelper.h"
 
 #include <vector>
 #include <string>
@@ -674,19 +676,7 @@ void HumanInspector::drawText(
     unsigned int size
 )
 {
-    if (!fontLoaded)
-    {
-        return;
-    }
-
-    sf::Text label;
-    label.setFont(font);
-    label.setString(text);
-    label.setCharacterSize(size);
-    label.setFillColor(sf::Color::Black);
-    label.setPosition(x, y);
-
-    window.draw(label);
+    UiDrawHelper::drawText(window, font, fontLoaded, text, x, y, size);
 }
 
 void HumanInspector::drawCenteredText(
@@ -696,66 +686,20 @@ void HumanInspector::drawCenteredText(
     unsigned int size
 )
 {
-    if (!fontLoaded)
-    {
-        return;
-    }
-
-    sf::Text label;
-    label.setFont(font);
-    label.setString(text);
-    label.setCharacterSize(size);
-    label.setFillColor(sf::Color::Black);
-
-    sf::FloatRect bounds = label.getLocalBounds();
-
-    label.setOrigin(
-        bounds.left + bounds.width / 2.0f,
-        bounds.top + bounds.height / 2.0f
+    UiDrawHelper::drawCenteredText(
+        window,
+        font,
+        fontLoaded,
+        text,
+        centerX,
+        y,
+        size
     );
-
-    label.setPosition(centerX, y);
-
-    window.draw(label);
 }
 
 sf::Color HumanInspector::getColorFromTile(TileType tile) const
 {
-    sf::Color color;
-
-    switch (tile)
-    {
-        case TileType::Water:
-            color = Config::COLOR_WATER;
-            break;
-
-        case TileType::Tree:
-            color = Config::COLOR_TREE;
-            break;
-
-        case TileType::Crop:
-            color = Config::COLOR_FOOD;
-            break;
-
-        case TileType::Human:
-            color = Config::COLOR_HUMAN;
-            break;
-
-        case TileType::Sand:
-            color = Config::COLOR_SAND;
-            break;
-
-        case TileType::Predator:
-            color = Config::COLOR_PREDATOR;
-            break;
-
-        case TileType::Empty:
-        default:
-            color = Config::COLOR_BACKGROUND;
-            break;
-    }
-
-    return DayNight::apply(color);
+    return TileColors::getDayNight(tile);
 }
 
 void HumanInspector::pickUpItem()

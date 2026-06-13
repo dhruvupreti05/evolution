@@ -8,6 +8,8 @@
 #include "entities/crop.h"
 #include "core/paths.h"
 
+#include "ui/uidrawhelper.h"
+
 #include <algorithm>
 
 SimulationStats::SimulationStats()

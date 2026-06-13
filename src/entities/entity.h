@@ -6,6 +6,7 @@
 #include "core/gameworld.h"
 #include "entities/direction.h"
 #include "entities/action.h"
+#include "entities/crop.h"
 
 class Brain;
 

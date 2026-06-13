@@ -1,5 +1,6 @@
 #include "environment/lake.h"
 #include "core/config.h"
+#include "core/gridutils.h"
 
 #include <cstdlib>
 #include <cmath>
@@ -551,4 +552,33 @@ void Lake::resetWaterDrinkingProgressForMissingWater()
             ++it;
         }
     }
+}
+
+bool Lake::getNearestWaterCell(int x, int y, int& waterX, int& waterY)
+{
+    bool found = false;
+    int bestDistance = 0;
+
+    for (const Lake& lake : lakes)
+    {
+        for (const GridPos& waterCell : lake.getCells())
+        {
+            int distance = GridUtils::manhattanDistance(
+                x,
+                y,
+                waterCell.x,
+                waterCell.y
+            );
+
+            if (!found || distance < bestDistance)
+            {
+                found = true;
+                bestDistance = distance;
+                waterX = waterCell.x;
+                waterY = waterCell.y;
+            }
+        }
+    }
+
+    return found;
 }

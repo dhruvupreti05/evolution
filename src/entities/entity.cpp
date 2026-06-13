@@ -2,6 +2,7 @@
 
 #include "entities/action.h"
 #include "brain/brain.h"
+#include "core/gridutils.h"
 
 #include <utility>
 

@@ -2,6 +2,8 @@
 
 #include "entities/direction.h"
 
+#include <string>
+
 enum class ActionType
 {
     Stay,
@@ -20,6 +22,13 @@ struct Action
     Direction direction = Direction::Stay;
     int targetX = -1;
     int targetY = -1;
+
+    bool hasTarget() const;
+    bool isMovement() const;
+    bool isMate() const;
+    bool isStay() const;
+
+    std::string toString() const;
 
     static Action stay();
     static Action move(Direction direction);

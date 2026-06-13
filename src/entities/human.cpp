@@ -1,4 +1,5 @@
 #include "human.h"
+#include "core/debuglog.h"
 #include "core/config.h"
 #include "environment/lake.h"
 #include "entities/crop.h"
@@ -11,6 +12,7 @@
 #include <set>
 #include <utility>
 #include <cmath>
+#include <set>
 
 std::vector<Human> Human::humans;
 int Human::nextId = 0;
@@ -1279,19 +1281,11 @@ bool Human::findChildSpawnCell(
 
 void Human::resolveMatingActions(GameWorld& world)
 {
-    std::vector<int> alreadyMatedIds;
+    std::set<int> alreadyMatedIds;
 
     auto alreadyMated = [&](int id)
     {
-        for (int matedId : alreadyMatedIds)
-        {
-            if (matedId == id)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return alreadyMatedIds.count(id) > 0;
     };
 
     int originalCount = static_cast<int>(humans.size());
@@ -1351,6 +1345,25 @@ void Human::resolveMatingActions(GameWorld& world)
             humans.emplace_back(childX, childY);
             int childId = humans.back().getId();
 
+
+            DebugLog::birth("Human", parentAId, parentBId, childId);
+
+            Human* parentAAfterBirth = Human::getById(parentAId);
+            Human* parentBAfterBirth = Human::getById(parentBId);
+
+            if (parentAAfterBirth != nullptr)
+            {
+                parentAAfterBirth->addChild(childId);
+                parentAAfterBirth->clearPreparedAction();
+            }
+
+            if (parentBAfterBirth != nullptr)
+            {
+                parentBAfterBirth->addChild(childId);
+                parentBAfterBirth->clearPreparedAction();
+            }
+
+
             for (auto& human : humans)
             {
                 if (human.getId() == parentAId || human.getId() == parentBId)
@@ -1360,9 +1373,23 @@ void Human::resolveMatingActions(GameWorld& world)
                 }
             }
 
-            alreadyMatedIds.push_back(parentAId);
-            alreadyMatedIds.push_back(parentBId);
+            alreadyMatedIds.insert(parentAId);
+            alreadyMatedIds.insert(parentBId);
+
             break;
         }
     }
+}
+
+Human* Human::getById(int id)
+{
+    for (Human& human : humans)
+    {
+        if (human.getId() == id)
+        {
+            return &human;
+        }
+    }
+
+    return nullptr;
 }

@@ -16,13 +16,4 @@ public:
 private:
     Action chooseThirstAction(Entity& entity, GameWorld& world);
     Action chooseHungerAction(Entity& entity, GameWorld& world);
-
-    int manhattanDistance(int x1, int y1, int x2, int y2) const;
-    Direction directionToward(
-        Entity& entity,
-        GameWorld& world,
-        int targetX,
-        int targetY
-    ) const;
-    Direction randomDirection() const;
 };

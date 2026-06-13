@@ -17,6 +17,8 @@ class Predator : public Entity
 public:
     Predator(int gridX, int gridY, PredatorType type);
 
+    static Predator* getById(int id);
+
     void update(GameWorld& world) override;
     void draw(GameWorld& world) const override;
 
