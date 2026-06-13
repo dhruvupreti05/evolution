@@ -117,6 +117,11 @@ public:
     static Human* getAdjacentLivingHuman(int x, int y);
     static Human* getAdjacentEdibleBody(int x, int y);
     static Human* getNearestLivingHumanOrBody(int x, int y);
+    static Human* getNearestLivingHumanOrBodyWithinRange(
+        int x,
+        int y,
+        int range
+    );
 
     static int countAlive();
     static int countDead();

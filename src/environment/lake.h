@@ -25,6 +25,14 @@ public:
     void draw(GameWorld& world) const;
 
     static bool getNearestWaterCell(int x, int y, int& waterX, int& waterY);
+    static bool getNearestWaterCellWithinRange(
+        const GameWorld& world,
+        int x,
+        int y,
+        int range,
+        int& waterX,
+        int& waterY
+    );
 
     const std::set<GridPos>& getSandCells() const;
 

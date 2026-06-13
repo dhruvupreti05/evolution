@@ -4,8 +4,10 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <map>
 
 std::vector<Crop> Crop::crops;
+std::map<GridPos, int> Crop::cropIndexByPosition;
 
 Crop::Crop(int gridX, int gridY)
     : Food(Config::TICKS_PER_MEAL_CROP, Config::HUNGER_PER_TICK_MEAL_CROP),
@@ -51,6 +53,7 @@ void Crop::trySpawnCrop(GameWorld& world)
 
     world.setTile(x, y, TileType::Crop);
     crops.emplace_back(x, y);
+    indexCropAt(x, y);
 }
 
 void Crop::drawCrops(GameWorld& world)
@@ -64,6 +67,7 @@ void Crop::drawCrops(GameWorld& world)
 void Crop::addCropAt(int x, int y)
 {
     crops.emplace_back(x, y);
+    indexCropAt(x, y);
 }
 
 void Crop::removeCropAt(GameWorld& world, int x, int y)
@@ -103,15 +107,21 @@ bool Crop::eatCropAt(GameWorld& world, int x, int y, int& hungerGain)
 
 Crop* Crop::getCropAt(int x, int y)
 {
-    for (auto& crop : crops)
+    auto it = cropIndexByPosition.find({x, y});
+
+    if (it == cropIndexByPosition.end())
     {
-        if (crop.x == x && crop.y == y)
-        {
-            return &crop;
-        }
+        return nullptr;
     }
 
-    return nullptr;
+    int index = it->second;
+
+    if (index < 0 || index >= static_cast<int>(crops.size()))
+    {
+        return nullptr;
+    }
+
+    return &crops[index];
 }
 
 int Crop::getCount()
@@ -135,6 +145,7 @@ void Crop::clearAll(GameWorld& world)
     }
 
     crops.clear();
+    cropIndexByPosition.clear();
 }
 
 void Crop::removeCropAt(int x, int y)
@@ -150,6 +161,8 @@ void Crop::removeCropAt(int x, int y)
         ),
         crops.end()
     );
+
+    rebuildCropIndex();
 }
 
 const std::vector<Crop>& Crop::getCrops()
@@ -181,4 +194,24 @@ bool Crop::getNearestCropCell(int x, int y, int& cropX, int& cropY)
     }
 
     return found;
+}
+
+void Crop::rebuildCropIndex()
+{
+    cropIndexByPosition.clear();
+
+    for (int i = 0; i < static_cast<int>(crops.size()); ++i)
+    {
+        cropIndexByPosition[{crops[i].getX(), crops[i].getY()}] = i;
+    }
+}
+
+void Crop::indexCropAt(int x, int y)
+{
+    cropIndexByPosition[{x, y}] = static_cast<int>(crops.size()) - 1;
+}
+
+void Crop::unindexCropAt(int x, int y)
+{
+    cropIndexByPosition.erase({x, y});
 }

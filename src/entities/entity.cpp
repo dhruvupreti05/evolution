@@ -23,6 +23,7 @@ Entity::Entity(
 
 void Entity::update(GameWorld& world)
 {
+    tickMatingCooldown();
     prepareAction(world);
     executePreparedAction(world);
 }
@@ -195,4 +196,32 @@ bool Entity::tryDrop(GameWorld& world)
 bool Entity::tryMateAt(GameWorld& world, int targetX, int targetY)
 {
     return false;
+}
+
+bool Entity::canMateNow() const
+{
+    return matingCooldownTicksRemaining <= 0;
+}
+
+void Entity::startMatingCooldown(int ticks)
+{
+    if (ticks < 0)
+    {
+        ticks = 0;
+    }
+
+    matingCooldownTicksRemaining = ticks;
+}
+
+void Entity::tickMatingCooldown()
+{
+    if (matingCooldownTicksRemaining > 0)
+    {
+        matingCooldownTicksRemaining--;
+    }
+}
+
+int Entity::getMatingCooldownTicksRemaining() const
+{
+    return matingCooldownTicksRemaining;
 }

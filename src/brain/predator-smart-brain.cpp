@@ -10,18 +10,13 @@
 #include "core/gridutils.h"
 #include "environment/lake.h"
 
-#include "environment/lake.h"
-#include "core/gridutils.h"
-
 #include <cstdlib>
-#include <cmath>
-
 
 Action PredatorSmartBrain::chooseAction(Entity& entity, GameWorld& world)
 {
     Predator* predator = dynamic_cast<Predator*>(&entity);
 
-    if (predator != nullptr && rand() % 20 == 0)
+    if (predator != nullptr && predator->canMateNow() && rand() % 20 == 0)
     {
         Predator* mate = Predator::getAdjacentLivingPredator(
             predator->getX(),
@@ -61,10 +56,19 @@ Action PredatorSmartBrain::chooseThirstAction(Entity& entity, GameWorld& world)
         }
     }
 
-    int bestX;
-    int bestY;
+    int waterX;
+    int waterY;
 
-    if (!Lake::getNearestWaterCell(entity.getX(), entity.getY(), bestX, bestY))
+    bool foundWater = Lake::getNearestWaterCellWithinRange(
+        world,
+        entity.getX(),
+        entity.getY(),
+        Config::PREDATOR_WATER_SEARCH_RANGE,
+        waterX,
+        waterY
+    );
+
+    if (!foundWater)
     {
         return Action::move(GridUtils::randomDirection());
     }
@@ -73,8 +77,8 @@ Action PredatorSmartBrain::chooseThirstAction(Entity& entity, GameWorld& world)
         GridUtils::directionToward(
             entity.getX(),
             entity.getY(),
-            bestX,
-            bestY
+            waterX,
+            waterY
         )
     );
 }
@@ -95,7 +99,11 @@ Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
         return Action::attack(livingHuman->getX(), livingHuman->getY());
     }
 
-    Human* target = Human::getNearestLivingHumanOrBody(entity.getX(), entity.getY());
+    Human* target = Human::getNearestLivingHumanOrBodyWithinRange(
+        entity.getX(),
+        entity.getY(),
+        Config::PREDATOR_PREY_SEARCH_RANGE
+    );
 
     if (target == nullptr)
     {

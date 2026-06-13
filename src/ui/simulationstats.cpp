@@ -117,21 +117,14 @@ void SimulationStats::draw(GameWorld& world)
 
 void SimulationStats::drawPanelBackground()
 {
-    sf::RectangleShape panel;
-
-    panel.setSize(
-        sf::Vector2f(
-            Config::STATS_WINDOW_WIDTH - 40.0f,
-            Config::STATS_WINDOW_HEIGHT - 40.0f
-        )
+    UiDrawHelper::drawPanelBackground(
+        window,
+        20.0f,
+        20.0f,
+        Config::STATS_WINDOW_WIDTH - 40.0f,
+        Config::STATS_WINDOW_HEIGHT - 40.0f,
+        sf::Color(255, 238, 200)
     );
-
-    panel.setPosition(20.0f, 20.0f);
-    panel.setFillColor(sf::Color(255, 238, 200));
-    panel.setOutlineColor(sf::Color::Black);
-    panel.setOutlineThickness(2);
-
-    window.draw(panel);
 }
 
 void SimulationStats::drawStatsText()
@@ -310,19 +303,7 @@ void SimulationStats::drawText(
     unsigned int size
 )
 {
-    if (!fontLoaded)
-    {
-        return;
-    }
-
-    sf::Text label;
-    label.setFont(font);
-    label.setString(text);
-    label.setCharacterSize(size);
-    label.setFillColor(sf::Color::Black);
-    label.setPosition(x, y);
-
-    window.draw(label);
+    UiDrawHelper::drawText(window, font, fontLoaded, text, x, y, size);
 }
 
 void SimulationStats::drawCenteredText(
@@ -332,25 +313,13 @@ void SimulationStats::drawCenteredText(
     unsigned int size
 )
 {
-    if (!fontLoaded)
-    {
-        return;
-    }
-
-    sf::Text label;
-    label.setFont(font);
-    label.setString(text);
-    label.setCharacterSize(size);
-    label.setFillColor(sf::Color::Black);
-
-    sf::FloatRect bounds = label.getLocalBounds();
-
-    label.setOrigin(
-        bounds.left + bounds.width / 2.0f,
-        bounds.top + bounds.height / 2.0f
+    UiDrawHelper::drawCenteredText(
+        window,
+        font,
+        fontLoaded,
+        text,
+        centerX,
+        y,
+        size
     );
-
-    label.setPosition(centerX, y);
-
-    window.draw(label);
 }

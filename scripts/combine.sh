@@ -1,6 +1,7 @@
 #!/bin/bash
 
-OUTPUT_FILE=".srcout.txt"
+START_DIR=$(pwd)
+OUTPUT_FILE="$START_DIR/srcout.txt"
 
 > "$OUTPUT_FILE"
 
@@ -8,7 +9,7 @@ REPO=$(git rev-parse --show-toplevel)
 cd "$REPO"
 
 if [ ! -d "src" ]; then
-    echo "Error: 'src' directory not found in the current folder."
+    echo "Error: 'src' directory not found in the repository root."
     exit 1
 fi
 

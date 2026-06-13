@@ -75,6 +75,10 @@ namespace Config
     constexpr int TICKS_PER_DEAD_PREDATOR = 300;
 
     // Predator settings
+
+    constexpr int PREDATOR_WATER_SEARCH_RANGE = 20;
+    constexpr int PREDATOR_PREY_SEARCH_RANGE = 25;
+
     constexpr int NUMBER_OF_LAND_PREDATORS = 5;
     constexpr int NUMBER_OF_WATER_PREDATORS = 10;
 
@@ -112,5 +116,10 @@ namespace Config
     constexpr int TICKS_PER_WATER_BLOCK_DRINKING = 5;
     constexpr int HUMAN_THIRST_PER_TICK_WATER = 30;
     constexpr int PREDATOR_THIRST_PER_TICK_WATER = 50;
+
+    // Mating settings
+    constexpr int HUMAN_MATING_COOLDOWN_TICKS = 20;
+    constexpr int PREDATOR_MATING_COOLDOWN_TICKS = 30;
+    constexpr int HUMAN_FEMALE_MATING_HEALTH_COST = 150;
 
 }

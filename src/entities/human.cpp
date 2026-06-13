@@ -1,5 +1,6 @@
 #include "human.h"
 #include "core/debuglog.h"
+#include "core/gridutils.h"
 #include "core/config.h"
 #include "environment/lake.h"
 #include "entities/crop.h"
@@ -7,24 +8,16 @@
 #include "brain/manual-brain.h"
 #include "brain/random-brain.h"
 #include "entities/action.h"
+#include "entities/entityoccupancy.h"
 
 #include <cstdlib>
 #include <set>
 #include <utility>
 #include <cmath>
-#include <set>
 
 std::vector<Human> Human::humans;
 int Human::nextId = 0;
 int Human::inspectedHumanId = -1;
-
-static bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
-{
-    int dx = std::abs(x1 - x2);
-    int dy = std::abs(y1 - y2);
-
-    return dx + dy == 1;
-}
 
 static bool targetsEntity(const Action& action, const Human& human)
 {
@@ -288,7 +281,13 @@ void Human::move(Direction direction, GameWorld& world)
         return;
     }
 
-    if (direction != Direction::Stay && Human::isBlockingEntityAt(newX, newY))
+    if (
+        direction != Direction::Stay &&
+        (
+            Human::isBlockingEntityAt(newX, newY) ||
+            Predator::isPredatorAt(newX, newY)
+        )
+    )
     {
         recordMoveAttempt(attempt);
         return;
@@ -320,8 +319,13 @@ void Human::move(Direction direction, GameWorld& world)
 
         if (shouldMoveThroughWater)
         {
+            int oldX = x;
+            int oldY = y;
+
             x = newX;
             y = newY;
+
+            EntityOccupancy::updateHumanPosition(*this, oldX, oldY);
 
             attempt.succeeded = true;
         }
@@ -330,8 +334,13 @@ void Human::move(Direction direction, GameWorld& world)
         return;
     }
 
+    int oldX = x;
+    int oldY = y;
+
     x = newX;
     y = newY;
+
+    EntityOccupancy::updateHumanPosition(*this, oldX, oldY);
 
     attempt.succeeded = true;
     recordMoveAttempt(attempt);
@@ -560,6 +569,17 @@ void Human::updateHumans(GameWorld& world)
                 human.deadBodyTicksRemaining--;
             }
 
+            human.clearPreparedAction();
+            continue;
+        }
+
+        human.tickMatingCooldown();
+
+        human.decayStats();
+        human.checkDeath();
+
+        if (human.dead)
+        {
             human.clearPreparedAction();
             continue;
         }
@@ -966,19 +986,19 @@ const std::vector<TileType>& Human::getInventory() const
 
 bool Human::isHumanAt(int x, int y)
 {
-    for (const auto& human : humans)
+    if (EntityOccupancy::hasBeenBuilt())
     {
-        if (human.isDead())
-        {
-            if (human.hasBody() && human.getX() == x && human.getY() == y)
-            {
-                return true;
-            }
+        return EntityOccupancy::hasHumanAt(x, y);
+    }
 
+    for (const Human& human : humans)
+    {
+        if (human.dead)
+        {
             continue;
         }
 
-        if (human.getX() == x && human.getY() == y)
+        if (human.x == x && human.y == y)
         {
             return true;
         }
@@ -989,27 +1009,30 @@ bool Human::isHumanAt(int x, int y)
 
 bool Human::isBlockingEntityAt(int x, int y)
 {
-    for (const auto& human : humans)
+    if (EntityOccupancy::hasBeenBuilt())
     {
-        if (human.isDead())
-        {
-            if (human.hasBody() && human.getX() == x && human.getY() == y)
-            {
-                return true;
-            }
-
-            continue;
-        }
-
-        if (human.getX() == x && human.getY() == y)
+        if (EntityOccupancy::hasHumanAt(x, y))
         {
             return true;
         }
     }
-
-    if (Predator::isPredatorAt(x, y))
+    else
     {
-        return true;
+        for (const Human& human : humans)
+        {
+            if (!human.dead && human.x == x && human.y == y)
+            {
+                return true;
+            }
+        }
+    }
+
+    for (const Human& human : humans)
+    {
+        if (human.dead && human.hasBody() && human.x == x && human.y == y)
+        {
+            return true;
+        }
     }
 
     return false;
@@ -1017,14 +1040,32 @@ bool Human::isBlockingEntityAt(int x, int y)
 
 Human* Human::getAdjacentLivingHuman(int x, int y)
 {
-    for (auto& human : humans)
+    for (const auto& direction : GridUtils::FOUR_DIRECTIONS)
     {
-        if (human.isDead())
+        int targetX = x + direction.dx;
+        int targetY = y + direction.dy;
+
+        Human* human = EntityOccupancy::getHumanAt(targetX, targetY);
+
+        if (human != nullptr && !human->isDead())
+        {
+            return human;
+        }
+    }
+
+    if (EntityOccupancy::hasBeenBuilt())
+    {
+        return nullptr;
+    }
+
+    for (Human& human : humans)
+    {
+        if (human.dead)
         {
             continue;
         }
 
-        if (isFourNeighborDistance(x, y, human.getX(), human.getY()))
+        if (GridUtils::isFourNeighborDistance(x, y, human.x, human.y))
         {
             return &human;
         }
@@ -1042,7 +1083,7 @@ Human* Human::getAdjacentEdibleBody(int x, int y)
             continue;
         }
 
-        if (isFourNeighborDistance(x, y, human.getX(), human.getY()))
+        if (GridUtils::isFourNeighborDistance(x, y, human.getX(), human.getY()))
         {
             return &human;
         }
@@ -1117,7 +1158,7 @@ bool Human::tryMove(Direction direction, GameWorld& world)
 
 bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
-    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
     }
@@ -1140,7 +1181,7 @@ bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
 
 bool Human::tryDrinkAt(GameWorld& world, int targetX, int targetY)
 {
-    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
     }
@@ -1196,7 +1237,12 @@ bool Human::canMateWith(const Human& other) const
         return false;
     }
 
-    if (!isFourNeighborDistance(x, y, other.x, other.y))
+    if (!canMateNow() || !other.canMateNow())
+    {
+        return false;
+    }
+
+    if (!GridUtils::isFourNeighborDistance(x, y, other.x, other.y))
     {
         return false;
     }
@@ -1239,14 +1285,14 @@ bool Human::findChildSpawnCell(
 )
 {
     const int candidates[8][2] = {
-        {parentA.getX(), parentA.getY()},
-        {parentB.getX(), parentB.getY()},
         {parentA.getX() + 1, parentA.getY()},
         {parentA.getX() - 1, parentA.getY()},
         {parentA.getX(), parentA.getY() + 1},
         {parentA.getX(), parentA.getY() - 1},
         {parentB.getX() + 1, parentB.getY()},
-        {parentB.getX() - 1, parentB.getY()}
+        {parentB.getX() - 1, parentB.getY()},
+        {parentB.getX(), parentB.getY() + 1},
+        {parentB.getX(), parentB.getY() - 1}
     };
 
     for (const auto& candidate : candidates)
@@ -1345,32 +1391,46 @@ void Human::resolveMatingActions(GameWorld& world)
             humans.emplace_back(childX, childY);
             int childId = humans.back().getId();
 
+            EntityOccupancy::rebuild(world);
 
             DebugLog::birth("Human", parentAId, parentBId, childId);
 
             Human* parentAAfterBirth = Human::getById(parentAId);
             Human* parentBAfterBirth = Human::getById(parentBId);
 
+            Human* mother = nullptr;
+
+            if (parentAAfterBirth != nullptr && parentAAfterBirth->getGender() == Gender::Female)
+            {
+                mother = parentAAfterBirth;
+            }
+            else if (parentBAfterBirth != nullptr && parentBAfterBirth->getGender() == Gender::Female)
+            {
+                mother = parentBAfterBirth;
+            }
+
+            if (mother != nullptr)
+            {
+                mother->takeDamage(Config::HUMAN_FEMALE_MATING_HEALTH_COST);
+                mother->checkDeath();
+            }
+
             if (parentAAfterBirth != nullptr)
             {
                 parentAAfterBirth->addChild(childId);
+                parentAAfterBirth->startMatingCooldown(
+                    Config::HUMAN_MATING_COOLDOWN_TICKS
+                );
                 parentAAfterBirth->clearPreparedAction();
             }
 
             if (parentBAfterBirth != nullptr)
             {
                 parentBAfterBirth->addChild(childId);
+                parentBAfterBirth->startMatingCooldown(
+                    Config::HUMAN_MATING_COOLDOWN_TICKS
+                );
                 parentBAfterBirth->clearPreparedAction();
-            }
-
-
-            for (auto& human : humans)
-            {
-                if (human.getId() == parentAId || human.getId() == parentBId)
-                {
-                    human.addChild(childId);
-                    human.clearPreparedAction();
-                }
             }
 
             alreadyMatedIds.insert(parentAId);
@@ -1392,4 +1452,106 @@ Human* Human::getById(int id)
     }
 
     return nullptr;
+}
+
+Human* Human::getNearestLivingHumanOrBodyWithinRange(
+    int x,
+    int y,
+    int range
+)
+{
+    if (range <= 0)
+    {
+        return nullptr;
+    }
+
+    Human* bestHuman = nullptr;
+    int bestDistance = range + 1;
+
+    if (EntityOccupancy::hasBeenBuilt())
+    {
+        for (int dy = -range; dy <= range; ++dy)
+        {
+            for (int dx = -range; dx <= range; ++dx)
+            {
+                int distance = std::abs(dx) + std::abs(dy);
+
+                if (distance == 0 || distance > range)
+                {
+                    continue;
+                }
+
+                if (distance >= bestDistance)
+                {
+                    continue;
+                }
+
+                Human* human = EntityOccupancy::getHumanAt(x + dx, y + dy);
+
+                if (human == nullptr)
+                {
+                    continue;
+                }
+
+                if (human->isDead())
+                {
+                    continue;
+                }
+
+                bestHuman = human;
+                bestDistance = distance;
+            }
+        }
+    }
+    else
+    {
+        for (Human& human : humans)
+        {
+            if (human.dead)
+            {
+                continue;
+            }
+
+            int distance = GridUtils::manhattanDistance(
+                x,
+                y,
+                human.x,
+                human.y
+            );
+
+            if (distance <= range && distance < bestDistance)
+            {
+                bestHuman = &human;
+                bestDistance = distance;
+            }
+        }
+    }
+
+    for (Human& human : humans)
+    {
+        if (!human.hasBody())
+        {
+            continue;
+        }
+
+        if (!human.isBodyEdible())
+        {
+            continue;
+        }
+
+        int distance = GridUtils::manhattanDistance(
+            x,
+            y,
+            human.x,
+            human.y
+        );
+
+        if (distance <= range && distance < bestDistance)
+        {
+            bestHuman = &human;
+            bestDistance = distance;
+        }
+    }
+
+    return bestHuman;
 }

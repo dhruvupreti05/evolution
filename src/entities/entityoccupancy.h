@@ -2,13 +2,15 @@
 
 #include <vector>
 
+#include "core/gameworld.h"
+
 class Human;
 class Predator;
 
 class EntityOccupancy
 {
 public:
-    static void rebuild();
+    static void rebuild(GameWorld& world);
 
     static bool hasBeenBuilt();
 
@@ -19,14 +21,16 @@ public:
     static bool hasPredatorAt(int x, int y);
     static bool isBlockedAt(int x, int y);
 
+    static void updateHumanPosition(Human& human, int oldX, int oldY);
+    static void updatePredatorPosition(Predator& predator, int oldX, int oldY);
+
 private:
     static bool built;
+    static int gridWidth;
 
     static int makeKey(int x, int y);
+    static bool isValidKey(int key, int vectorSize);
 
     static std::vector<Human*> humansByPosition;
     static std::vector<Predator*> predatorsByPosition;
-
-    static int maxKey;
-    static void ensureKeyExists(int key);
 };

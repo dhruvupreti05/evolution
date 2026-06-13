@@ -1,43 +1,33 @@
 #include "entities/entityoccupancy.h"
 
+#include "core/gameworld.h"
 #include "entities/human.h"
 #include "entities/predator.h"
 
-#include <algorithm>
-
 bool EntityOccupancy::built = false;
-int EntityOccupancy::maxKey = 0;
+int EntityOccupancy::gridWidth = 1;
 
 std::vector<Human*> EntityOccupancy::humansByPosition;
 std::vector<Predator*> EntityOccupancy::predatorsByPosition;
 
 int EntityOccupancy::makeKey(int x, int y)
 {
-    return y * 10000 + x;
+    return y * gridWidth + x;
 }
 
-void EntityOccupancy::ensureKeyExists(int key)
+bool EntityOccupancy::isValidKey(int key, int vectorSize)
 {
-    if (key < 0)
-    {
-        return;
-    }
-
-    if (key >= static_cast<int>(humansByPosition.size()))
-    {
-        humansByPosition.resize(key + 1, nullptr);
-    }
-
-    if (key >= static_cast<int>(predatorsByPosition.size()))
-    {
-        predatorsByPosition.resize(key + 1, nullptr);
-    }
+    return key >= 0 && key < vectorSize;
 }
 
-void EntityOccupancy::rebuild()
+void EntityOccupancy::rebuild(GameWorld& world)
 {
-    std::fill(humansByPosition.begin(), humansByPosition.end(), nullptr);
-    std::fill(predatorsByPosition.begin(), predatorsByPosition.end(), nullptr);
+    gridWidth = world.getGridWidth();
+
+    int totalCells = world.getGridWidth() * world.getGridHeight();
+
+    humansByPosition.assign(totalCells, nullptr);
+    predatorsByPosition.assign(totalCells, nullptr);
 
     std::vector<Human>& humans = Human::getHumans();
 
@@ -48,25 +38,31 @@ void EntityOccupancy::rebuild()
             continue;
         }
 
-        int key = makeKey(human.getX(), human.getY());
-        ensureKeyExists(key);
-        humansByPosition[key] = &human;
-    }
-
-    const std::vector<Predator>& constPredators = Predator::getPredators();
-
-    for (const Predator& predatorConst : constPredators)
-    {
-        if (predatorConst.isDead())
+        if (!world.isInsideGrid(human.getX(), human.getY()))
         {
             continue;
         }
 
-        Predator* predator = const_cast<Predator*>(&predatorConst);
+        int key = makeKey(human.getX(), human.getY());
+        humansByPosition[key] = &human;
+    }
 
-        int key = makeKey(predator->getX(), predator->getY());
-        ensureKeyExists(key);
-        predatorsByPosition[key] = predator;
+    std::vector<Predator>& predators = Predator::getPredatorsMutable();
+
+    for (Predator& predator : predators)
+    {
+        if (predator.isDead())
+        {
+            continue;
+        }
+
+        if (!world.isInsideGrid(predator.getX(), predator.getY()))
+        {
+            continue;
+        }
+
+        int key = makeKey(predator.getX(), predator.getY());
+        predatorsByPosition[key] = &predator;
     }
 
     built = true;
@@ -124,4 +120,54 @@ bool EntityOccupancy::hasPredatorAt(int x, int y)
 bool EntityOccupancy::isBlockedAt(int x, int y)
 {
     return hasHumanAt(x, y) || hasPredatorAt(x, y);
+}
+
+void EntityOccupancy::updateHumanPosition(Human& human, int oldX, int oldY)
+{
+    if (!built)
+    {
+        return;
+    }
+
+    int oldKey = makeKey(oldX, oldY);
+
+    if (
+        isValidKey(oldKey, static_cast<int>(humansByPosition.size())) &&
+        humansByPosition[oldKey] == &human
+    )
+    {
+        humansByPosition[oldKey] = nullptr;
+    }
+
+    int newKey = makeKey(human.getX(), human.getY());
+
+    if (isValidKey(newKey, static_cast<int>(humansByPosition.size())))
+    {
+        humansByPosition[newKey] = &human;
+    }
+}
+
+void EntityOccupancy::updatePredatorPosition(Predator& predator, int oldX, int oldY)
+{
+    if (!built)
+    {
+        return;
+    }
+
+    int oldKey = makeKey(oldX, oldY);
+
+    if (
+        isValidKey(oldKey, static_cast<int>(predatorsByPosition.size())) &&
+        predatorsByPosition[oldKey] == &predator
+    )
+    {
+        predatorsByPosition[oldKey] = nullptr;
+    }
+
+    int newKey = makeKey(predator.getX(), predator.getY());
+
+    if (isValidKey(newKey, static_cast<int>(predatorsByPosition.size())))
+    {
+        predatorsByPosition[newKey] = &predator;
+    }
 }

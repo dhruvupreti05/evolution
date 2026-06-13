@@ -582,3 +582,64 @@ bool Lake::getNearestWaterCell(int x, int y, int& waterX, int& waterY)
 
     return found;
 }
+
+bool Lake::getNearestWaterCellWithinRange(
+    const GameWorld& world,
+    int x,
+    int y,
+    int range,
+    int& waterX,
+    int& waterY
+)
+{
+    if (range <= 0)
+    {
+        return false;
+    }
+
+    bool found = false;
+    int bestDistance = range + 1;
+
+    for (int dy = -range; dy <= range; ++dy)
+    {
+        for (int dx = -range; dx <= range; ++dx)
+        {
+            int distance = std::abs(dx) + std::abs(dy);
+
+            if (distance == 0)
+            {
+                continue;
+            }
+
+            if (distance > range)
+            {
+                continue;
+            }
+
+            if (distance >= bestDistance)
+            {
+                continue;
+            }
+
+            int candidateX = x + dx;
+            int candidateY = y + dy;
+
+            if (!world.isInsideGrid(candidateX, candidateY))
+            {
+                continue;
+            }
+
+            if (world.getTile(candidateX, candidateY) != TileType::Water)
+            {
+                continue;
+            }
+
+            found = true;
+            bestDistance = distance;
+            waterX = candidateX;
+            waterY = candidateY;
+        }
+    }
+
+    return found;
+}

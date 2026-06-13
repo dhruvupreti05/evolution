@@ -40,7 +40,9 @@ public:
     static int countDead();
 
     static void killWaterPredatorsNotOnWater(GameWorld& world);
+
     static const std::vector<Predator>& getPredators();
+    static std::vector<Predator>& getPredatorsMutable();
 
     bool tryMateAt(GameWorld& world, int targetX, int targetY) override;
 

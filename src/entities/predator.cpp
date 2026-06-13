@@ -1,10 +1,12 @@
 #include "entities/predator.h"
 #include "core/config.h"
+#include "core/gridutils.h"
 #include "environment/lake.h"
 #include "brain/predator-smart-brain.h"
 #include "entities/action.h"
 #include "core/debuglog.h"
 #include "entities/human.h"
+#include "entities/entityoccupancy.h"
 
 #include <cstdlib>
 #include <memory>
@@ -16,16 +18,6 @@ int Predator::nextId = 0;
 
 namespace
 {
-    int manhattanDistance(int x1, int y1, int x2, int y2)
-    {
-        return std::abs(x1 - x2) + std::abs(y1 - y2);
-    }
-
-    bool isFourNeighborDistance(int x1, int y1, int x2, int y2)
-    {
-        return manhattanDistance(x1, y1, x2, y2) == 1;
-    }
-
     bool findRandomLandSpawn(GameWorld& world, int& x, int& y)
     {
         for (int attempt = 0; attempt < 5000; ++attempt)
@@ -138,6 +130,17 @@ void Predator::updatePredators(GameWorld& world)
             continue;
         }
 
+        predator.tickMatingCooldown();
+
+        predator.decayStats();
+        predator.checkDeath();
+
+        if (predator.dead)
+        {
+            predator.clearPreparedAction();
+            continue;
+        }
+
         predator.prepareAction(world);
     }
 
@@ -185,7 +188,47 @@ Predator* Predator::getAdjacentLivingPredator(
     const Predator* self
 )
 {
-    for (auto& predator : predators)
+    if (self != nullptr && !self->canMateNow())
+    {
+        return nullptr;
+    }
+
+    for (const auto& direction : GridUtils::FOUR_DIRECTIONS)
+    {
+        int targetX = x + direction.dx;
+        int targetY = y + direction.dy;
+
+        Predator* predator = EntityOccupancy::getPredatorAt(targetX, targetY);
+
+        if (predator == nullptr)
+        {
+            continue;
+        }
+
+        if (predator->isDead())
+        {
+            continue;
+        }
+
+        if (self != nullptr && predator->getId() == self->getId())
+        {
+            continue;
+        }
+
+        if (!predator->canMateNow())
+        {
+            continue;
+        }
+
+        return predator;
+    }
+
+    if (EntityOccupancy::hasBeenBuilt())
+    {
+        return nullptr;
+    }
+
+    for (Predator& predator : predators)
     {
         if (predator.dead)
         {
@@ -197,7 +240,12 @@ Predator* Predator::getAdjacentLivingPredator(
             continue;
         }
 
-        if (isFourNeighborDistance(x, y, predator.getX(), predator.getY()))
+        if (!predator.canMateNow())
+        {
+            continue;
+        }
+
+        if (GridUtils::isFourNeighborDistance(x, y, predator.getX(), predator.getY()))
         {
             return &predator;
         }
@@ -229,14 +277,14 @@ bool Predator::findChildSpawnCell(
 )
 {
     const int candidates[8][2] = {
-        {parentA.getX(), parentA.getY()},
-        {parentB.getX(), parentB.getY()},
         {parentA.getX() + 1, parentA.getY()},
         {parentA.getX() - 1, parentA.getY()},
         {parentA.getX(), parentA.getY() + 1},
         {parentA.getX(), parentA.getY() - 1},
         {parentB.getX() + 1, parentB.getY()},
-        {parentB.getX() - 1, parentB.getY()}
+        {parentB.getX() - 1, parentB.getY()},
+        {parentB.getX(), parentB.getY() + 1},
+        {parentB.getX(), parentB.getY() - 1}
     };
 
     for (const auto& candidate : candidates)
@@ -296,6 +344,7 @@ void Predator::resolveMatingActions(GameWorld& world)
 
         if (
             parentA.dead ||
+            !parentA.canMateNow() ||
             alreadyMated(parentA.getId()) ||
             !parentA.hasPreparedAction() ||
             parentA.getPreparedAction().type != ActionType::Mate
@@ -310,6 +359,7 @@ void Predator::resolveMatingActions(GameWorld& world)
 
             if (
                 parentB.dead ||
+                !parentB.canMateNow() ||
                 alreadyMated(parentB.getId()) ||
                 !parentB.hasPreparedAction() ||
                 parentB.getPreparedAction().type != ActionType::Mate
@@ -319,7 +369,7 @@ void Predator::resolveMatingActions(GameWorld& world)
             }
 
             if (
-                !isFourNeighborDistance(
+                !GridUtils::isFourNeighborDistance(
                     parentA.getX(),
                     parentA.getY(),
                     parentB.getX(),
@@ -357,6 +407,7 @@ void Predator::resolveMatingActions(GameWorld& world)
             predators.emplace_back(childX, childY, childType);
             int childId = predators.back().getId();
 
+            EntityOccupancy::rebuild(world);
 
             DebugLog::birth("Predator", parentAId, parentBId, childId);
 
@@ -366,23 +417,19 @@ void Predator::resolveMatingActions(GameWorld& world)
             if (parentAAfterBirth != nullptr)
             {
                 parentAAfterBirth->addChild(childId);
+                parentAAfterBirth->startMatingCooldown(
+                    Config::PREDATOR_MATING_COOLDOWN_TICKS
+                );
                 parentAAfterBirth->clearPreparedAction();
             }
 
             if (parentBAfterBirth != nullptr)
             {
                 parentBAfterBirth->addChild(childId);
+                parentBAfterBirth->startMatingCooldown(
+                    Config::PREDATOR_MATING_COOLDOWN_TICKS
+                );
                 parentBAfterBirth->clearPreparedAction();
-            }
-
-
-            for (auto& predator : predators)
-            {
-                if (predator.getId() == parentAId || predator.getId() == parentBId)
-                {
-                    predator.addChild(childId);
-                    predator.clearPreparedAction();
-                }
             }
 
             alreadyMatedIds.insert(parentAId);
@@ -526,19 +573,27 @@ void Predator::draw(GameWorld& world) const
 
 bool Predator::isPredatorAt(int x, int y)
 {
-    for (const auto& predator : predators)
+    if (EntityOccupancy::hasBeenBuilt())
     {
-        if (predator.dead)
+        if (EntityOccupancy::hasPredatorAt(x, y))
         {
-            if (predator.hasBody() && predator.x == x && predator.y == y)
+            return true;
+        }
+    }
+    else
+    {
+        for (const Predator& predator : predators)
+        {
+            if (!predator.dead && predator.x == x && predator.y == y)
             {
                 return true;
             }
-
-            continue;
         }
+    }
 
-        if (predator.x == x && predator.y == y)
+    for (const Predator& predator : predators)
+    {
+        if (predator.dead && predator.hasBody() && predator.x == x && predator.y == y)
         {
             return true;
         }
@@ -611,6 +666,11 @@ const std::vector<Predator>& Predator::getPredators()
     return predators;
 }
 
+std::vector<Predator>& Predator::getPredatorsMutable()
+{
+    return predators;
+}
+
 bool Predator::tryMove(Direction direction, GameWorld& world)
 {
     int dx = 0;
@@ -621,15 +681,19 @@ bool Predator::tryMove(Direction direction, GameWorld& world)
         case Direction::Up:
             dy = -1;
             break;
+
         case Direction::Down:
             dy = 1;
             break;
+
         case Direction::Left:
             dx = -1;
             break;
+
         case Direction::Right:
             dx = 1;
             break;
+
         case Direction::Stay:
         default:
             return false;
@@ -643,14 +707,20 @@ bool Predator::tryMove(Direction direction, GameWorld& world)
         return false;
     }
 
+    int oldX = x;
+    int oldY = y;
+
     x = targetX;
     y = targetY;
+
+    EntityOccupancy::updatePredatorPosition(*this, oldX, oldY);
+
     return true;
 }
 
 bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
-    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
     }
@@ -679,7 +749,7 @@ bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 
 bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
 {
-    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
     }
@@ -699,7 +769,7 @@ bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
 
 bool Predator::tryAttackAt(GameWorld& world, int targetX, int targetY)
 {
-    if (!isFourNeighborDistance(x, y, targetX, targetY))
+    if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
     }

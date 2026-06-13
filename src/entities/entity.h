@@ -58,9 +58,16 @@ public:
     void addChild(int childId);
     const std::vector<int>& getChildren() const;
 
+    bool canMateNow() const;
+    void startMatingCooldown(int ticks);
+    void tickMatingCooldown();
+    int getMatingCooldownTicksRemaining() const;
+
 protected:
     int x;
     int y;
+
+    int matingCooldownTicksRemaining = 0;
 
     int health;
     int thirst;

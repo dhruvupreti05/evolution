@@ -634,7 +634,7 @@ void HumanInspector::drawStats(const Human& human)
     );
 
     drawText(
-        "Orientation: " + human.getOrientationString(),
+        "Mate Cooldown: " + std::to_string(human.getMatingCooldownTicksRemaining()),
         rightX,
         y + spacing * 2.0f,
         statTextSize

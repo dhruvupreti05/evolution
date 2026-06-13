@@ -1,7 +1,6 @@
-#include "core/simulation.h"
-
 #include "core/config.h"
 #include "core/debuglog.h"
+#include "core/simulation.h"
 #include "entities/crop.h"
 #include "entities/entityoccupancy.h"
 #include "entities/human.h"
@@ -21,7 +20,7 @@ void Simulation::init(GameWorld& world)
     Predator::init(world);
     Weather::init();
 
-    EntityOccupancy::rebuild();
+    EntityOccupancy::rebuild(world);
 
     DebugLog::setEnabled(false);
 }
@@ -52,13 +51,13 @@ void Simulation::handleMainEvent(const sf::Event& event, GameWorld& world)
     if (event.key.code == sf::Keyboard::F)
     {
         Weather::triggerFlood(world);
-        EntityOccupancy::rebuild();
+        EntityOccupancy::rebuild(world);
     }
 
     if (event.key.code == sf::Keyboard::G)
     {
         Weather::triggerDrought(world);
-        EntityOccupancy::rebuild();
+        EntityOccupancy::rebuild(world);
     }
 
     if (event.key.code == sf::Keyboard::T)
@@ -82,17 +81,17 @@ void Simulation::update(GameWorld& world)
     DayNight::update();
     Human::resetBodyEatingClaims();
 
-    EntityOccupancy::rebuild();
+    EntityOccupancy::rebuild(world);
 
     Human::updateHumans(world);
     Predator::updatePredators(world);
 
-    EntityOccupancy::rebuild();
+    EntityOccupancy::rebuild(world);
 
     Crop::update(world);
     Weather::update(world);
 
-    EntityOccupancy::rebuild();
+    EntityOccupancy::rebuild(world);
 }
 
 void Simulation::draw(GameWorld& world)

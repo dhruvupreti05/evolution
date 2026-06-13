@@ -1,9 +1,11 @@
 #pragma once
 
 #include <vector>
+#include <map>
 
 #include "core/gameworld.h"
 #include "entities/food.h"
+#include "environment/clumps.h"
 
 class Crop : public Food
 {
@@ -37,4 +39,10 @@ private:
     static std::vector<Crop> crops;
 
     static void trySpawnCrop(GameWorld& world);
+
+    static std::map<GridPos, int> cropIndexByPosition;
+
+    static void rebuildCropIndex();
+    static void indexCropAt(int x, int y);
+    static void unindexCropAt(int x, int y);
 };
