@@ -11,8 +11,10 @@
 #include <cstdlib>
 #include <cmath>
 
-
-
+/*
+    Chooses a mostly random action for the entity.
+    Humans and predators may randomly try to mate first, then the entity randomly moves, eats, drinks, or stays.
+*/
 Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 {
     Human* human = dynamic_cast<Human*>(&entity);
@@ -31,11 +33,7 @@ Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 
     if (predator != nullptr && rand() % 20 == 0)
     {
-        Predator* mate = Predator::getAdjacentLivingPredator(
-            predator->getX(),
-            predator->getY(),
-            predator
-        );
+        Predator* mate = Predator::getAdjacentLivingPredator(predator->getX(), predator->getY(), predator);
 
         if (mate != nullptr)
         {
@@ -52,13 +50,7 @@ Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 
     int targetX;
     int targetY;
-    GridUtils::getNeighbor(
-        entity.getX(),
-        entity.getY(),
-        direction,
-        targetX,
-        targetY
-    );
+    GridUtils::getNeighbor(entity.getX(), entity.getY(), direction, targetX, targetY);
 
     if (!world.isInsideGrid(targetX, targetY))
     {
@@ -67,11 +59,13 @@ Action RandomBrain::chooseAction(Entity& entity, GameWorld& world)
 
     TileType tile = world.getTile(targetX, targetY);
 
+    // Random brains sometimes eat crops instead of just walking onto them.
     if (tile == TileType::Crop && rand() % 2 == 0)
     {
         return Action::eat(targetX, targetY);
     }
 
+    // Same idea as crops: drinking is possible, but not guaranteed.
     if (tile == TileType::Water && rand() % 2 == 0)
     {
         return Action::drink(targetX, targetY);

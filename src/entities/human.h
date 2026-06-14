@@ -9,6 +9,10 @@
 #include "entities/food.h"
 #include "entities/direction.h"
 
+/*
+    Direction the human is facing.
+    This is used for vision and for actions that happen in front of the human.
+*/
 enum class Orientation
 {
     North,
@@ -17,12 +21,19 @@ enum class Orientation
     West
 };
 
+/*
+    Biological sex used for mating rules.
+*/
 enum class Gender
 {
     Male,
     Female
 };
 
+/*
+    Stores the result of one attempted move.
+    Humans keep a small memory of these so their recent movement history can be inspected.
+*/
 struct MoveAttempt
 {
     Direction direction = Direction::Stay;
@@ -30,6 +41,10 @@ struct MoveAttempt
     bool succeeded = false;
 };
 
+/*
+    Stores one tile visible from the human's point of view.
+    forward and side are relative to the human, while worldX and worldY are actual grid coordinates.
+*/
 struct VisibleTile
 {
     TileType tile = TileType::Empty;
@@ -40,9 +55,10 @@ struct VisibleTile
     int worldX = 0;
     int worldY = 0;
 };
-struct Action;
 
-
+/*
+    Human entity in the simulation.
+*/
 class Human : public Entity, public Food
 {
 public:
@@ -56,6 +72,8 @@ public:
 
     void setManualBrain();
     void setRandomBrain();
+
+    // Sends a player-chosen action into the manual brain.
     void giveManualAction(const Action& action);
 
     static Human* getById(int id);
@@ -94,6 +112,7 @@ public:
 
     std::vector<VisibleTile> getVisibleTiles(const GameWorld& world) const;
 
+    // Moves the human directly from inspector/manual controls.
     void controlledMove(Direction direction, GameWorld& world);
 
     bool tryPickUp(GameWorld& world) override;
@@ -117,11 +136,7 @@ public:
     static Human* getAdjacentLivingHuman(int x, int y);
     static Human* getAdjacentEdibleBody(int x, int y);
     static Human* getNearestLivingHumanOrBody(int x, int y);
-    static Human* getNearestLivingHumanOrBodyWithinRange(
-        int x,
-        int y,
-        int range
-    );
+    static Human* getNearestLivingHumanOrBodyWithinRange(int x, int y, int range);
 
     static int countAlive();
     static int countDead();
@@ -134,8 +149,9 @@ public:
     bool canMateWith(const Human& other) const;
 
 private:
+    // Counts how many eating ticks are left on this human's dead body.
     int deadBodyTicksRemaining = 0;
-    
+
     static std::vector<Human> humans;
     static int nextId;
     static int inspectedHumanId;
@@ -144,6 +160,7 @@ private:
 
     Orientation orientation = Orientation::South;
 
+    // Circular buffer storing the most recent move attempts.
     std::array<MoveAttempt, MOVE_MEMORY_SIZE> previousMoves;
     int moveMemoryIndex = 0;
     int moveMemoryCount = 0;
@@ -158,13 +175,7 @@ private:
     void decayStats() override;
     void checkDeath() override;
 
-    static bool findChildSpawnCell(
-        GameWorld& world,
-        const Human& parentA,
-        const Human& parentB,
-        int& childX,
-        int& childY
-    );
+    static bool findChildSpawnCell(GameWorld& world, const Human& parentA, const Human& parentB, int& childX, int& childY);
 
     void recordMoveAttempt(MoveAttempt attempt);
     MoveAttempt getPreviousMove() const;
@@ -173,14 +184,11 @@ private:
     void directionToDelta(Direction direction, int& dx, int& dy) const;
 
     void updateOrientation(Direction direction);
-    void orientationToBasis(
-        int& forwardDx,
-        int& forwardDy,
-        int& rightDx,
-        int& rightDy
-    ) const;
+    void orientationToBasis(int& forwardDx, int& forwardDy, int& rightDx, int& rightDy) const;
 
     void drawVisionOutline(GameWorld& world) const;
+
+    // Keeps vision logs from printing every boring tile.
     bool shouldLogVisibleTile(TileType tile) const;
 
     std::vector<TileType> inventory;

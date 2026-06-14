@@ -2,6 +2,9 @@
 
 #include <stdexcept>
 
+/*
+    Searches upward from the current folder until it finds the project root.
+*/
 std::filesystem::path Paths::getRepoRoot()
 {
     std::filesystem::path current = std::filesystem::current_path();
@@ -9,10 +12,8 @@ std::filesystem::path Paths::getRepoRoot()
     while (true)
     {
         bool hasGitFolder = std::filesystem::exists(current / ".git");
-        bool hasMakefile = std::filesystem::exists(current / "Makefile");
-        bool hasSrcFolder = std::filesystem::exists(current / "src");
 
-        if (hasGitFolder || (hasMakefile && hasSrcFolder))
+        if (hasGitFolder)
         {
             return current;
         }
@@ -26,6 +27,9 @@ std::filesystem::path Paths::getRepoRoot()
     }
 }
 
+/*
+    Builds the full path to an asset inside docs/assets.
+*/
 std::filesystem::path Paths::getAssetPath(const std::string& relativePath)
 {
     return getRepoRoot() / "docs" / "assets" / relativePath;

@@ -6,23 +6,43 @@
 
 bool EntityOccupancy::built = false;
 int EntityOccupancy::gridWidth = 1;
+int EntityOccupancy::gridHeight = 1;
 
 std::vector<Human*> EntityOccupancy::humansByPosition;
 std::vector<Predator*> EntityOccupancy::predatorsByPosition;
 
+/*
+    Turns a grid position into a single vector index.
+*/
 int EntityOccupancy::makeKey(int x, int y)
 {
     return y * gridWidth + x;
 }
 
+/*
+    Checks whether a flattened position index is inside a lookup vector.
+*/
 bool EntityOccupancy::isValidKey(int key, int vectorSize)
 {
     return key >= 0 && key < vectorSize;
 }
 
+/*
+    Checks whether a grid position is inside the occupancy grid.
+*/
+bool EntityOccupancy::isInsideOccupancyGrid(int x, int y)
+{
+    return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
+}
+
+/*
+    Rebuilds the full position lookup from the current living humans and predators.
+    This is useful after large world changes or after many entities have moved.
+*/
 void EntityOccupancy::rebuild(GameWorld& world)
 {
     gridWidth = world.getGridWidth();
+    gridHeight = world.getGridHeight();
 
     int totalCells = world.getGridWidth() * world.getGridHeight();
 
@@ -68,21 +88,27 @@ void EntityOccupancy::rebuild(GameWorld& world)
     built = true;
 }
 
+/*
+    Returns whether the occupancy lookup has been initialized.
+*/
 bool EntityOccupancy::hasBeenBuilt()
 {
     return built;
 }
 
+/*
+    Returns the living human at a grid position, or nullptr if there is none.
+*/
 Human* EntityOccupancy::getHumanAt(int x, int y)
 {
-    if (!built)
+    if (!built || !isInsideOccupancyGrid(x, y))
     {
         return nullptr;
     }
 
     int key = makeKey(x, y);
 
-    if (key < 0 || key >= static_cast<int>(humansByPosition.size()))
+    if (!isValidKey(key, static_cast<int>(humansByPosition.size())))
     {
         return nullptr;
     }
@@ -90,16 +116,19 @@ Human* EntityOccupancy::getHumanAt(int x, int y)
     return humansByPosition[key];
 }
 
+/*
+    Returns the living predator at a grid position, or nullptr if there is none.
+*/
 Predator* EntityOccupancy::getPredatorAt(int x, int y)
 {
-    if (!built)
+    if (!built || !isInsideOccupancyGrid(x, y))
     {
         return nullptr;
     }
 
     int key = makeKey(x, y);
 
-    if (key < 0 || key >= static_cast<int>(predatorsByPosition.size()))
+    if (!isValidKey(key, static_cast<int>(predatorsByPosition.size())))
     {
         return nullptr;
     }
@@ -107,21 +136,33 @@ Predator* EntityOccupancy::getPredatorAt(int x, int y)
     return predatorsByPosition[key];
 }
 
+/*
+    Checks whether a living human is on a tile.
+*/
 bool EntityOccupancy::hasHumanAt(int x, int y)
 {
     return getHumanAt(x, y) != nullptr;
 }
 
+/*
+    Checks whether a living predator is on a tile.
+*/
 bool EntityOccupancy::hasPredatorAt(int x, int y)
 {
     return getPredatorAt(x, y) != nullptr;
 }
 
+/*
+    Checks whether a tile is occupied by any living entity.
+*/
 bool EntityOccupancy::isBlockedAt(int x, int y)
 {
     return hasHumanAt(x, y) || hasPredatorAt(x, y);
 }
 
+/*
+    Updates one human's old and new positions without rebuilding the whole lookup.
+*/
 void EntityOccupancy::updateHumanPosition(Human& human, int oldX, int oldY)
 {
     if (!built)
@@ -129,24 +170,31 @@ void EntityOccupancy::updateHumanPosition(Human& human, int oldX, int oldY)
         return;
     }
 
-    int oldKey = makeKey(oldX, oldY);
-
-    if (
-        isValidKey(oldKey, static_cast<int>(humansByPosition.size())) &&
-        humansByPosition[oldKey] == &human
-    )
+    if (isInsideOccupancyGrid(oldX, oldY))
     {
-        humansByPosition[oldKey] = nullptr;
+        int oldKey = makeKey(oldX, oldY);
+
+        // Only clears the old tile if this exact human is still recorded there.
+        if (isValidKey(oldKey, static_cast<int>(humansByPosition.size())) && humansByPosition[oldKey] == &human)
+        {
+            humansByPosition[oldKey] = nullptr;
+        }
     }
 
-    int newKey = makeKey(human.getX(), human.getY());
-
-    if (isValidKey(newKey, static_cast<int>(humansByPosition.size())))
+    if (isInsideOccupancyGrid(human.getX(), human.getY()))
     {
-        humansByPosition[newKey] = &human;
+        int newKey = makeKey(human.getX(), human.getY());
+
+        if (isValidKey(newKey, static_cast<int>(humansByPosition.size())))
+        {
+            humansByPosition[newKey] = &human;
+        }
     }
 }
 
+/*
+    Updates one predator's old and new positions without rebuilding the whole lookup.
+*/
 void EntityOccupancy::updatePredatorPosition(Predator& predator, int oldX, int oldY)
 {
     if (!built)
@@ -154,20 +202,24 @@ void EntityOccupancy::updatePredatorPosition(Predator& predator, int oldX, int o
         return;
     }
 
-    int oldKey = makeKey(oldX, oldY);
-
-    if (
-        isValidKey(oldKey, static_cast<int>(predatorsByPosition.size())) &&
-        predatorsByPosition[oldKey] == &predator
-    )
+    if (isInsideOccupancyGrid(oldX, oldY))
     {
-        predatorsByPosition[oldKey] = nullptr;
+        int oldKey = makeKey(oldX, oldY);
+
+        // Only clears the old tile if this exact predator is still recorded there.
+        if (isValidKey(oldKey, static_cast<int>(predatorsByPosition.size())) && predatorsByPosition[oldKey] == &predator)
+        {
+            predatorsByPosition[oldKey] = nullptr;
+        }
     }
 
-    int newKey = makeKey(predator.getX(), predator.getY());
-
-    if (isValidKey(newKey, static_cast<int>(predatorsByPosition.size())))
+    if (isInsideOccupancyGrid(predator.getX(), predator.getY()))
     {
-        predatorsByPosition[newKey] = &predator;
+        int newKey = makeKey(predator.getX(), predator.getY());
+
+        if (isValidKey(newKey, static_cast<int>(predatorsByPosition.size())))
+        {
+            predatorsByPosition[newKey] = &predator;
+        }
     }
 }

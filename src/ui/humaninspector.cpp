@@ -11,6 +11,10 @@
 
 namespace
 {
+    /*
+        Finds the grid cell directly in front of a human.
+        Inspector actions use this so eating, drinking, attacking, pickup, drop, and mating target the facing tile.
+    */
     void getFacingTarget(const Human& human, int& targetX, int& targetY)
     {
         targetX = human.getX();
@@ -37,13 +41,17 @@ namespace
     }
 }
 
+/*
+    Creates the inspector and loads the font used for its text.
+*/
 HumanInspector::HumanInspector()
 {
-    fontLoaded = font.loadFromFile(
-        "/System/Library/Fonts/Supplemental/Times New Roman.ttf"
-    );
+    fontLoaded = font.loadFromFile("/System/Library/Fonts/Supplemental/Times New Roman.ttf");
 }
 
+/*
+    Opens the inspector window if it is not already open.
+*/
 void HumanInspector::open()
 {
     if (window.isOpen())
@@ -51,17 +59,14 @@ void HumanInspector::open()
         return;
     }
 
-    window.create(
-        sf::VideoMode(
-            Config::INSPECTOR_WINDOW_WIDTH,
-            Config::INSPECTOR_WINDOW_HEIGHT
-        ),
-        "Human Inspector"
-    );
+    window.create(sf::VideoMode(Config::INSPECTOR_WINDOW_WIDTH, Config::INSPECTOR_WINDOW_HEIGHT), "Human Inspector");
 
     updateInspectedHumanId();
 }
 
+/*
+    Closes the inspector and returns all humans to random brain control.
+*/
 void HumanInspector::close()
 {
     if (window.isOpen())
@@ -73,11 +78,17 @@ void HumanInspector::close()
     Human::clearInspectedHuman();
 }
 
+/*
+    Returns whether the inspector window is open.
+*/
 bool HumanInspector::isOpen() const
 {
     return window.isOpen();
 }
 
+/*
+    Gives every living human a random brain again.
+*/
 void HumanInspector::resetAllHumanBrains()
 {
     std::vector<Human>& humans = Human::getHumans();
@@ -91,6 +102,10 @@ void HumanInspector::resetAllHumanBrains()
     }
 }
 
+/*
+    Returns the currently selected living human.
+    If the selected index is invalid, it resets back to the first human.
+*/
 Human* HumanInspector::getSelectedHuman()
 {
     std::vector<Human>& humans = Human::getHumans();
@@ -100,10 +115,7 @@ Human* HumanInspector::getSelectedHuman()
         return nullptr;
     }
 
-    if (
-        selectedHumanIndex < 0 ||
-        selectedHumanIndex >= static_cast<int>(humans.size())
-    )
+    if (selectedHumanIndex < 0 || selectedHumanIndex >= static_cast<int>(humans.size()))
     {
         selectedHumanIndex = 0;
     }
@@ -116,6 +128,10 @@ Human* HumanInspector::getSelectedHuman()
     return &humans[selectedHumanIndex];
 }
 
+/*
+    Makes the selected human the inspected human.
+    Only the inspected human gets manual brain control.
+*/
 void HumanInspector::updateInspectedHumanId()
 {
     std::vector<Human>& humans = Human::getHumans();
@@ -126,10 +142,7 @@ void HumanInspector::updateInspectedHumanId()
         return;
     }
 
-    if (
-        selectedHumanIndex < 0 ||
-        selectedHumanIndex >= static_cast<int>(humans.size())
-    )
+    if (selectedHumanIndex < 0 || selectedHumanIndex >= static_cast<int>(humans.size()))
     {
         selectedHumanIndex = 0;
     }
@@ -148,6 +161,9 @@ void HumanInspector::updateInspectedHumanId()
     Human::setInspectedHumanId(selectedHuman->getId());
 }
 
+/*
+    Selects the next living human.
+*/
 void HumanInspector::moveToNextHuman()
 {
     std::vector<Human>& humans = Human::getHumans();
@@ -179,6 +195,9 @@ void HumanInspector::moveToNextHuman()
     Human::clearInspectedHuman();
 }
 
+/*
+    Selects the previous living human.
+*/
 void HumanInspector::moveToPreviousHuman()
 {
     std::vector<Human>& humans = Human::getHumans();
@@ -210,6 +229,9 @@ void HumanInspector::moveToPreviousHuman()
     Human::clearInspectedHuman();
 }
 
+/*
+    Queues a movement action for the selected human.
+*/
 void HumanInspector::moveSelectedHuman(Direction direction)
 {
     Human* human = getSelectedHuman();
@@ -222,6 +244,9 @@ void HumanInspector::moveSelectedHuman(Direction direction)
     human->giveManualAction(Action::move(direction));
 }
 
+/*
+    Queues an eat action toward the selected human's facing tile.
+*/
 void HumanInspector::eatFacingTile()
 {
     Human* human = getSelectedHuman();
@@ -239,6 +264,9 @@ void HumanInspector::eatFacingTile()
     human->giveManualAction(Action::eat(targetX, targetY));
 }
 
+/*
+    Queues a drink action toward the selected human's facing tile.
+*/
 void HumanInspector::drinkFacingTile()
 {
     Human* human = getSelectedHuman();
@@ -256,6 +284,9 @@ void HumanInspector::drinkFacingTile()
     human->giveManualAction(Action::drink(targetX, targetY));
 }
 
+/*
+    Queues an attack action toward the selected human's facing tile.
+*/
 void HumanInspector::attackFacingTile()
 {
     Human* human = getSelectedHuman();
@@ -273,6 +304,10 @@ void HumanInspector::attackFacingTile()
     human->giveManualAction(Action::attack(targetX, targetY));
 }
 
+/*
+    Handles inspector keyboard controls.
+    The keys either switch humans, close the window, or queue manual actions.
+*/
 void HumanInspector::handleEvents(GameWorld& world)
 {
     if (!window.isOpen())
@@ -294,6 +329,7 @@ void HumanInspector::handleEvents(GameWorld& world)
         {
             continue;
         }
+
         if (event.key.code == sf::Keyboard::Escape)
         {
             close();
@@ -350,6 +386,10 @@ void HumanInspector::handleEvents(GameWorld& world)
     }
 }
 
+/*
+    Updates and draws the inspector window.
+    If no living human exists, it shows a fallback message instead of stats.
+*/
 void HumanInspector::draw(GameWorld& world)
 {
     if (!window.isOpen())
@@ -376,21 +416,13 @@ void HumanInspector::draw(GameWorld& world)
     {
         Human::clearInspectedHuman();
 
-        drawCenteredText(
-            "No humans exist.",
-            Config::INSPECTOR_WINDOW_WIDTH / 2.0f,
-            60.0f,
-            24
-        );
+        drawCenteredText("No humans exist.", Config::INSPECTOR_WINDOW_WIDTH / 2.0f, 60.0f, 24);
 
         window.display();
         return;
     }
 
-    if (
-        selectedHumanIndex < 0 ||
-        selectedHumanIndex >= static_cast<int>(humans.size())
-    )
+    if (selectedHumanIndex < 0 || selectedHumanIndex >= static_cast<int>(humans.size()))
     {
         selectedHumanIndex = 0;
     }
@@ -404,12 +436,7 @@ void HumanInspector::draw(GameWorld& world)
 
     if (selectedHuman == nullptr)
     {
-        drawCenteredText(
-            "No living humans to inspect.",
-            Config::INSPECTOR_WINDOW_WIDTH / 2.0f,
-            60.0f,
-            24
-        );
+        drawCenteredText("No living humans to inspect.", Config::INSPECTOR_WINDOW_WIDTH / 2.0f, 60.0f, 24);
 
         window.display();
         return;
@@ -433,6 +460,9 @@ void HumanInspector::draw(GameWorld& world)
     window.display();
 }
 
+/*
+    Draws the selected human's inventory slots and items.
+*/
 void HumanInspector::drawInventory(const Human& human)
 {
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
@@ -444,9 +474,7 @@ void HumanInspector::drawInventory(const Human& human)
 
     int slotCount = Config::HUMAN_INVENTORY_SIZE;
 
-    float totalWidth =
-        slotCount * tileSize +
-        (slotCount - 1) * spacing;
+    float totalWidth = slotCount * tileSize + (slotCount - 1) * spacing;
 
     float startX = centerX - totalWidth / 2.0f;
 
@@ -480,16 +508,14 @@ void HumanInspector::drawInventory(const Human& human)
     }
 }
 
+/*
+    Draws the main inspector panel background.
+*/
 void HumanInspector::drawPanelBackground()
 {
     sf::RectangleShape panel;
 
-    panel.setSize(
-        sf::Vector2f(
-            Config::INSPECTOR_WINDOW_WIDTH - 40.0f,
-            Config::INSPECTOR_WINDOW_HEIGHT - 40.0f
-        )
-    );
+    panel.setSize(sf::Vector2f(Config::INSPECTOR_WINDOW_WIDTH - 40.0f, Config::INSPECTOR_WINDOW_HEIGHT - 40.0f));
 
     panel.setPosition(20.0f, 20.0f);
     panel.setFillColor(sf::Color(255, 238, 200));
@@ -499,6 +525,10 @@ void HumanInspector::drawPanelBackground()
     window.draw(panel);
 }
 
+/*
+    Draws the selected human's vision from their point of view.
+    Empty visible tiles are drawn first, then actual visible objects are drawn on top.
+*/
 void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 {
     const float tileSize = static_cast<float>(Config::INSPECTOR_VIEW_TILE_SIZE);
@@ -512,23 +542,14 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 
     std::vector<VisibleTile> visibleTiles = human.getVisibleTiles(world);
 
-    auto drawTile = [&](float x,
-                        float y,
-                        sf::Color fillColor,
-                        sf::Color outlineColor,
-                        float outlineThickness)
+    auto drawTile = [&](float x, float y, sf::Color fillColor, sf::Color outlineColor, float outlineThickness)
     {
         sf::RectangleShape square;
 
-        square.setPosition(
-            std::round(x + outlineThickness),
-            std::round(y + outlineThickness)
-        );
+        // Shrinks and offsets the square so the outline stays inside the tile.
+        square.setPosition(std::round(x + outlineThickness), std::round(y + outlineThickness));
 
-        square.setSize(sf::Vector2f(
-            tileSize - outlineThickness * 2.0f,
-            tileSize - outlineThickness * 2.0f
-        ));
+        square.setSize(sf::Vector2f(tileSize - outlineThickness * 2.0f, tileSize - outlineThickness * 2.0f));
 
         square.setFillColor(fillColor);
         square.setOutlineColor(outlineColor);
@@ -546,13 +567,7 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
             float drawX = humanDrawX + side * tileSize;
             float drawY = humanDrawY - forward * tileSize;
 
-            drawTile(
-                drawX,
-                drawY,
-                Config::COLOR_BACKGROUND,
-                sf::Color(215, 215, 215),
-                1.0f
-            );
+            drawTile(drawX, drawY, Config::COLOR_BACKGROUND, sf::Color(215, 215, 215), 1.0f);
         }
     }
 
@@ -561,24 +576,15 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
         float drawX = humanDrawX + tile.side * tileSize;
         float drawY = humanDrawY - tile.forward * tileSize;
 
-        drawTile(
-            drawX,
-            drawY,
-            getColorFromTile(tile.tile),
-            sf::Color::Black,
-            1.0f
-        );
+        drawTile(drawX, drawY, getColorFromTile(tile.tile), sf::Color::Black, 1.0f);
     }
 
-    drawTile(
-        humanDrawX,
-        humanDrawY,
-        sf::Color::White,
-        sf::Color::Black,
-        2.0f
-    );
+    drawTile(humanDrawX, humanDrawY, sf::Color::White, sf::Color::Black, 2.0f);
 }
 
+/*
+    Draws the selected human's stats.
+*/
 void HumanInspector::drawStats(const Human& human)
 {
     float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
@@ -591,71 +597,29 @@ void HumanInspector::drawStats(const Human& human)
 
     unsigned int statTextSize = 18;
 
-    drawText(
-        "Human ID: " + std::to_string(human.getId()),
-        leftX,
-        y,
-        statTextSize
-    );
+    drawText("Human ID: " + std::to_string(human.getId()), leftX, y, statTextSize);
 
-    drawText(
-        "Age: " + std::to_string(human.getAge()),
-        leftX,
-        y + spacing,
-        statTextSize
-    );
+    drawText("Age: " + std::to_string(human.getAge()), leftX, y + spacing, statTextSize);
 
-    drawText(
-        "Health: " + std::to_string(human.getHealth()),
-        leftX,
-        y + spacing * 2.0f,
-        statTextSize
-    );
+    drawText("Health: " + std::to_string(human.getHealth()), leftX, y + spacing * 2.0f, statTextSize);
 
-    drawText(
-        "Thirst: " + std::to_string(human.getThirst()),
-        leftX,
-        y + spacing * 3.0f,
-        statTextSize
-    );
+    drawText("Thirst: " + std::to_string(human.getThirst()), leftX, y + spacing * 3.0f, statTextSize);
 
-    drawText(
-        "Hunger: " + std::to_string(human.getHunger()),
-        rightX,
-        y,
-        statTextSize
-    );
+    drawText("Hunger: " + std::to_string(human.getHunger()), rightX, y, statTextSize);
 
-    drawText(
-        "Gender: " + human.getGenderString(),
-        rightX,
-        y + spacing,
-        statTextSize
-    );
+    drawText("Gender: " + human.getGenderString(), rightX, y + spacing, statTextSize);
 
-    drawText(
-        "Mate Cooldown: " + std::to_string(human.getMatingCooldownTicksRemaining()),
-        rightX,
-        y + spacing * 2.0f,
-        statTextSize
-    );
+    drawText("Mate Cooldown: " + std::to_string(human.getMatingCooldownTicksRemaining()), rightX, y + spacing * 2.0f, statTextSize);
 
     std::string status = human.isDead() ? "Dead" : "Alive";
 
-    drawText(
-        "Status: " + status,
-        rightX,
-        y + spacing * 3.0f,
-        statTextSize
-    );
+    drawText("Status: " + status, rightX, y + spacing * 3.0f, statTextSize);
 }
 
-void HumanInspector::drawNeuralNetworkBox(
-    float x,
-    float y,
-    float width,
-    float height
-)
+/*
+    Draws the placeholder neural network area.
+*/
+void HumanInspector::drawNeuralNetworkBox(float x, float y, float width, float height)
 {
     sf::RectangleShape box;
     box.setSize(sf::Vector2f(width, height));
@@ -669,39 +633,33 @@ void HumanInspector::drawNeuralNetworkBox(
     drawText("Neural Network", x + 12.0f, y + 10.0f, 16);
 }
 
-void HumanInspector::drawText(
-    const std::string& text,
-    float x,
-    float y,
-    unsigned int size
-)
+/*
+    Draws left-aligned text using the shared UI text helper.
+*/
+void HumanInspector::drawText(const std::string& text, float x, float y, unsigned int size)
 {
     UiDrawHelper::drawText(window, font, fontLoaded, text, x, y, size);
 }
 
-void HumanInspector::drawCenteredText(
-    const std::string& text,
-    float centerX,
-    float y,
-    unsigned int size
-)
+/*
+    Draws centered text using the shared UI text helper.
+*/
+void HumanInspector::drawCenteredText(const std::string& text, float centerX, float y, unsigned int size)
 {
-    UiDrawHelper::drawCenteredText(
-        window,
-        font,
-        fontLoaded,
-        text,
-        centerX,
-        y,
-        size
-    );
+    UiDrawHelper::drawCenteredText(window, font, fontLoaded, text, centerX, y, size);
 }
 
+/*
+    Converts a tile type into the color used inside the inspector.
+*/
 sf::Color HumanInspector::getColorFromTile(TileType tile) const
 {
     return TileColors::getDayNight(tile);
 }
 
+/*
+    Queues a pickup action for the selected human.
+*/
 void HumanInspector::pickUpItem()
 {
     Human* human = getSelectedHuman();
@@ -714,6 +672,9 @@ void HumanInspector::pickUpItem()
     human->giveManualAction(Action::pickUp());
 }
 
+/*
+    Queues a drop action for the selected human.
+*/
 void HumanInspector::dropItem()
 {
     Human* human = getSelectedHuman();
@@ -726,6 +687,9 @@ void HumanInspector::dropItem()
     human->giveManualAction(Action::drop());
 }
 
+/*
+    Queues mating for the selected human and, if possible, queues the matching mate action for the facing human.
+*/
 void HumanInspector::mateFacingEntity()
 {
     Human* human = getSelectedHuman();

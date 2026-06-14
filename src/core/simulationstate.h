@@ -6,6 +6,10 @@
 #include "entities/predator.h"
 #include "entities/crop.h"
 
+/*
+    Small access point for the current simulation data.
+    This wraps the static entity lists so UI code can read counts and collections from one place.
+*/
 class SimulationState
 {
 public:

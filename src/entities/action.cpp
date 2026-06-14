@@ -4,6 +4,9 @@
 
 namespace
 {
+    /*
+        Converts a direction into readable text for debug logs.
+    */
     std::string directionToString(Direction direction)
     {
         switch (direction)
@@ -27,26 +30,42 @@ namespace
     }
 }
 
+/*
+    Returns whether this action points to a real target tile.
+*/
 bool Action::hasTarget() const
 {
     return targetX >= 0 && targetY >= 0;
 }
 
+/*
+    Returns whether this action is a movement action.
+*/
 bool Action::isMovement() const
 {
     return type == ActionType::Move;
 }
 
+/*
+    Returns whether this action is a mating action.
+*/
 bool Action::isMate() const
 {
     return type == ActionType::Mate;
 }
 
+/*
+    Returns whether this action asks the entity to do nothing.
+*/
 bool Action::isStay() const
 {
     return type == ActionType::Stay;
 }
 
+/*
+    Converts the action into readable text for debugging.
+    Additionally target based actions include their target coordinates.
+*/
 std::string Action::toString() const
 {
     switch (type)
@@ -80,11 +99,17 @@ std::string Action::toString() const
     }
 }
 
+/*
+    Creates an action where the entity does nothing.
+*/
 Action Action::stay()
 {
     return Action{};
 }
 
+/*
+    Creates an action that moves the entity one tile in a direction.
+*/
 Action Action::move(Direction direction)
 {
     Action action;
@@ -93,6 +118,9 @@ Action Action::move(Direction direction)
     return action;
 }
 
+/*
+    Creates an action that eats from a target tile.
+*/
 Action Action::eat(int x, int y)
 {
     Action action;
@@ -102,6 +130,9 @@ Action Action::eat(int x, int y)
     return action;
 }
 
+/*
+    Creates an action that drinks from a target tile.
+*/
 Action Action::drink(int x, int y)
 {
     Action action;
@@ -111,6 +142,9 @@ Action Action::drink(int x, int y)
     return action;
 }
 
+/*
+    Creates an action that attacks a target tile.
+*/
 Action Action::attack(int x, int y)
 {
     Action action;
@@ -120,6 +154,9 @@ Action Action::attack(int x, int y)
     return action;
 }
 
+/*
+    Creates an action that picks up an item from the entity's current tile.
+*/
 Action Action::pickUp()
 {
     Action action;
@@ -127,6 +164,9 @@ Action Action::pickUp()
     return action;
 }
 
+/*
+    Creates an action that drops the carried item onto the entity's current tile.
+*/
 Action Action::drop()
 {
     Action action;
@@ -134,6 +174,9 @@ Action Action::drop()
     return action;
 }
 
+/*
+    Creates an action that mates with an adjacent target entity.
+*/
 Action Action::mate(int x, int y)
 {
     Action action;

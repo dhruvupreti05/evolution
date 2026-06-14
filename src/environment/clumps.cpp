@@ -4,37 +4,31 @@
 #include <queue>
 #include <algorithm>
 
-Clump::Clump(
-    int centerX,
-    int centerY,
-    int numBlocks,
-    int gridWidth,
-    int gridHeight
-)
-    : centerX(centerX),
-      centerY(centerY),
-      numBlocks(numBlocks),
-      gridWidth(gridWidth),
-      gridHeight(gridHeight)
+/*
+    Creates a random connected clump of grid cells.
+    The clump starts from a center cell, grows outward, then fills enclosed holes.
+*/
+Clump::Clump(int centerX, int centerY, int numBlocks, int gridWidth, int gridHeight) : centerX(centerX), centerY(centerY), numBlocks(numBlocks), gridWidth(gridWidth), gridHeight(gridHeight)
 {
     generate();
 }
 
+/*
+    Returns all cells that belong to this clump.
+*/
 const std::set<GridPos>& Clump::getCells() const
 {
     return cells;
 }
 
+/*
+    Returns the valid four-direction neighbors of a grid position.
+*/
 std::vector<GridPos> Clump::getNeighbors(const GridPos& pos) const
 {
     std::vector<GridPos> neighbors;
 
-    std::vector<GridPos> directions = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    };
+    std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     for (const auto& dir : directions)
     {
@@ -50,6 +44,9 @@ std::vector<GridPos> Clump::getNeighbors(const GridPos& pos) const
     return neighbors;
 }
 
+/*
+    Grows the clump by repeatedly picking a random edge cell and adding one of its open neighbors.
+*/
 void Clump::generate()
 {
     if (numBlocks <= 0)
@@ -57,12 +54,7 @@ void Clump::generate()
         return;
     }
 
-    if (
-        centerX < 0 ||
-        centerX >= gridWidth ||
-        centerY < 0 ||
-        centerY >= gridHeight
-    )
+    if (centerX < 0 || centerX >= gridWidth || centerY < 0 || centerY >= gridHeight)
     {
         return;
     }
@@ -90,6 +82,7 @@ void Clump::generate()
 
         if (validNeighbors.empty())
         {
+            // Removes this frontier cell because it has no more unused neighbors to grow into.
             frontier.erase(frontier.begin() + index);
             continue;
         }
@@ -103,6 +96,10 @@ void Clump::generate()
     fillHoles();
 }
 
+/*
+    Fills enclosed empty spaces inside the clump.
+    It flood-fills from outside the shape, then treats unreached empty cells as holes.
+*/
 void Clump::fillHoles()
 {
     if (cells.empty())
@@ -123,8 +120,7 @@ void Clump::fillHoles()
         maxY = std::max(maxY, cell.y);
     }
 
-    // Add a 1-cell margin around the bounding box.
-    // This gives the flood-fill an outside area to start from.
+    // Adds a border around the clump so the flood-fill has an outside area to start from.
     minX = std::max(0, minX - 1);
     maxX = std::min(gridWidth - 1, maxX + 1);
     minY = std::max(0, minY - 1);
@@ -156,7 +152,6 @@ void Clump::fillHoles()
         queue.push(pos);
     };
 
-    // Start flood-fill from the edges of the bounding box.
     for (int x = minX; x <= maxX; ++x)
     {
         tryAddOutside(x, minY);
@@ -169,12 +164,7 @@ void Clump::fillHoles()
         tryAddOutside(maxX, y);
     }
 
-    std::vector<GridPos> directions = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    };
+    std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     while (!queue.empty())
     {
@@ -190,18 +180,17 @@ void Clump::fillHoles()
         }
     }
 
-    // Any empty cell inside the bounding box that was not reached
-    // by the outside flood-fill is an enclosed hole.
     for (int y = minY; y <= maxY; ++y)
     {
         for (int x = minX; x <= maxX; ++x)
         {
             GridPos pos{x, y};
 
-            bool isWater = cells.count(pos) > 0;
+            bool isClumpCell = cells.count(pos) > 0;
             bool isOutside = outside.count(pos) > 0;
 
-            if (!isWater && !isOutside)
+            // Empty cells not connected to the outside are trapped holes, so they become part of the clump.
+            if (!isClumpCell && !isOutside)
             {
                 cells.insert(pos);
             }

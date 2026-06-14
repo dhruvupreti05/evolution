@@ -3,6 +3,9 @@
 #include <filesystem>
 #include <string>
 
+/*
+    Central place for building file paths used by the project.
+*/
 class Paths
 {
 public:

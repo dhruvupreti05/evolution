@@ -5,6 +5,9 @@
 
 #include "core/gameworld.h"
 
+/*
+    Separate UI window for viewing simulation-wide stats.
+*/
 class SimulationStats
 {
 public:
@@ -34,26 +37,9 @@ private:
     void drawStatsText();
     void drawWeatherBoxes();
 
-    void drawText(
-        const std::string& text,
-        float x,
-        float y,
-        unsigned int size = 28
-    );
+    void drawText(const std::string& text, float x, float y, unsigned int size = 28);
 
-    void drawCenteredText(
-        const std::string& text,
-        float centerX,
-        float y,
-        unsigned int size = 28
-    );
+    void drawCenteredText(const std::string& text, float centerX, float y, unsigned int size = 28);
 
-    void drawWeatherBox(
-        float x,
-        float y,
-        float width,
-        float height,
-        const std::string& title,
-        bool active
-    );
+    void drawWeatherBox(float x, float y, float width, float height, const std::string& title, bool active);
 };

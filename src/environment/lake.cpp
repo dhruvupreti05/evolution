@@ -5,29 +5,31 @@
 #include <cstdlib>
 #include <cmath>
 #include <limits>
-#include <map>
 
 std::vector<Lake> Lake::lakes;
 std::map<GridPos, int> Lake::waterDrinkTicksRemaining;
 
+/*
+    Candidate center point for placing a lake.
+*/
 struct LakeSpawnPoint
 {
     int x;
     int y;
 };
 
-Lake::Lake(
-    int centerX,
-    int centerY,
-    int numWaterBlocks,
-    int gridWidth,
-    int gridHeight
-)
-    : Clump(centerX, centerY, numWaterBlocks, gridWidth, gridHeight)
+/*
+    Creates a lake as a water clump, then builds the sand border around it.
+*/
+Lake::Lake(int centerX, int centerY, int numWaterBlocks, int gridWidth, int gridHeight) : Clump(centerX, centerY, numWaterBlocks, gridWidth, gridHeight)
 {
     generateSandBoundary();
 }
 
+/*
+    Creates the starting lakes.
+    Centers are chosen to be spread out instead of clustering in one area.
+*/
 void Lake::init(GameWorld& world)
 {
     int gridWidth = world.getGridWidth();
@@ -69,10 +71,7 @@ void Lake::init(GameWorld& world)
     chosenCenters.push_back(candidates[firstIndex]);
     candidates.erase(candidates.begin() + firstIndex);
 
-    while (
-        static_cast<int>(chosenCenters.size()) < numLakes &&
-        !candidates.empty()
-    )
+    while (static_cast<int>(chosenCenters.size()) < numLakes && !candidates.empty())
     {
         double bestDistanceToNearestLake = -1.0;
         int bestCandidateIndex = -1;
@@ -114,16 +113,9 @@ void Lake::init(GameWorld& world)
 
     for (const auto& center : chosenCenters)
     {
-        int numWaterBlocks =
-            rand() % Config::LAKE_BLOCK_RANGE + Config::MIN_LAKE_BLOCKS;
+        int numWaterBlocks = rand() % Config::LAKE_BLOCK_RANGE + Config::MIN_LAKE_BLOCKS;
 
-        lakes.emplace_back(
-            center.x,
-            center.y,
-            numWaterBlocks,
-            world.getGridWidth(),
-            world.getGridHeight()
-        );
+        lakes.emplace_back(center.x, center.y, numWaterBlocks, world.getGridWidth(), world.getGridHeight());
     }
 
     for (const auto& lake : lakes)
@@ -132,27 +124,19 @@ void Lake::init(GameWorld& world)
     }
 }
 
+/*
+    Creates sand around all water cells.
+    Diagonals are included so lakes get a full border.
+*/
 void Lake::generateSandBoundary()
 {
-    std::vector<GridPos> directions = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1},
-        {1, 1},
-        {1, -1},
-        {-1, 1},
-        {-1, -1}
-    };
+    std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     for (const auto& waterCell : cells)
     {
         for (const auto& dir : directions)
         {
-            GridPos neighbor = {
-                waterCell.x + dir.x,
-                waterCell.y + dir.y
-            };
+            GridPos neighbor = {waterCell.x + dir.x, waterCell.y + dir.y};
 
             if (cells.count(neighbor) == 0)
             {
@@ -162,6 +146,9 @@ void Lake::generateSandBoundary()
     }
 }
 
+/*
+    Writes this lake's sand and water cells into the world tile grid.
+*/
 void Lake::addToWorld(GameWorld& world) const
 {
     for (const auto& sand : sandCells)
@@ -188,6 +175,9 @@ void Lake::addToWorld(GameWorld& world) const
     }
 }
 
+/*
+    Draws this lake's sand first, then water on top.
+*/
 void Lake::draw(GameWorld& world) const
 {
     for (const auto& sand : sandCells)
@@ -201,6 +191,9 @@ void Lake::draw(GameWorld& world) const
     }
 }
 
+/*
+    Draws every lake.
+*/
 void Lake::drawLakes(GameWorld& world)
 {
     for (const auto& lake : lakes)
@@ -209,22 +202,34 @@ void Lake::drawLakes(GameWorld& world)
     }
 }
 
+/*
+    Returns the sand cells surrounding this lake.
+*/
 const std::set<GridPos>& Lake::getSandCells() const
 {
     return sandCells;
 }
 
+/*
+    Rebuilds the sand border after water cells change.
+*/
 void Lake::regenerateSandBoundary()
 {
     sandCells.clear();
     generateSandBoundary();
 }
 
+/*
+    Checks whether this lake contains a specific water cell.
+*/
 bool Lake::containsWaterCell(int x, int y) const
 {
     return cells.count({x, y}) > 0;
 }
 
+/*
+    Checks whether a position touches this lake's water.
+*/
 bool Lake::isAdjacentToWaterCell(int x, int y) const
 {
     for (const auto& water : cells)
@@ -241,18 +246,27 @@ bool Lake::isAdjacentToWaterCell(int x, int y) const
     return false;
 }
 
+/*
+    Adds one water cell and refreshes the sand border.
+*/
 void Lake::addWaterCell(int x, int y)
 {
     cells.insert({x, y});
     regenerateSandBoundary();
 }
 
+/*
+    Removes one water cell and refreshes the sand border.
+*/
 void Lake::removeWaterCell(int x, int y)
 {
     cells.erase({x, y});
     regenerateSandBoundary();
 }
 
+/*
+    Clears old lake terrain from the world, then writes the current lake terrain back.
+*/
 void Lake::rebuildLakeTerrain(GameWorld& world)
 {
     for (int y = 0; y < world.getGridHeight(); ++y)
@@ -274,6 +288,9 @@ void Lake::rebuildLakeTerrain(GameWorld& world)
     }
 }
 
+/*
+    Removes one water cell from whichever lake contains it.
+*/
 bool Lake::removeWaterAt(GameWorld& world, int x, int y)
 {
     for (auto it = lakes.begin(); it != lakes.end(); ++it)
@@ -298,6 +315,10 @@ bool Lake::removeWaterAt(GameWorld& world, int x, int y)
     return false;
 }
 
+/*
+    Places water at a tile.
+    It joins an adjacent lake if possible, otherwise it creates a new one-cell lake.
+*/
 bool Lake::placeWaterAt(GameWorld& world, int x, int y)
 {
     TileType tile = world.getTile(x, y);
@@ -317,13 +338,7 @@ bool Lake::placeWaterAt(GameWorld& world, int x, int y)
         }
     }
 
-    Lake newLake(
-        x,
-        y,
-        1,
-        world.getGridWidth(),
-        world.getGridHeight()
-    );
+    Lake newLake(x, y, 1, world.getGridWidth(), world.getGridHeight());
 
     lakes.push_back(newLake);
     rebuildLakeTerrain(world);
@@ -331,18 +346,12 @@ bool Lake::placeWaterAt(GameWorld& world, int x, int y)
     return true;
 }
 
+/*
+    Expands this lake outward by one layer.
+*/
 void Lake::floodOneLayer()
 {
-    std::vector<GridPos> directions = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1},
-        {1, 1},
-        {1, -1},
-        {-1, 1},
-        {-1, -1}
-    };
+    std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     std::set<GridPos> newWaterCells;
 
@@ -350,17 +359,9 @@ void Lake::floodOneLayer()
     {
         for (const auto& dir : directions)
         {
-            GridPos neighbor = {
-                waterCell.x + dir.x,
-                waterCell.y + dir.y
-            };
+            GridPos neighbor = {waterCell.x + dir.x, waterCell.y + dir.y};
 
-            if (
-                neighbor.x < 0 ||
-                neighbor.x >= gridWidth ||
-                neighbor.y < 0 ||
-                neighbor.y >= gridHeight
-            )
+            if (neighbor.x < 0 || neighbor.x >= gridWidth || neighbor.y < 0 || neighbor.y >= gridHeight)
             {
                 continue;
             }
@@ -382,18 +383,12 @@ void Lake::floodOneLayer()
     regenerateSandBoundary();
 }
 
+/*
+    Removes the outer layer of this lake.
+*/
 void Lake::dryOneLayer()
 {
-    std::vector<GridPos> directions = {
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1},
-        {1, 1},
-        {1, -1},
-        {-1, 1},
-        {-1, -1}
-    };
+    std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     std::set<GridPos> cellsToRemove;
 
@@ -403,17 +398,9 @@ void Lake::dryOneLayer()
 
         for (const auto& dir : directions)
         {
-            GridPos neighbor = {
-                waterCell.x + dir.x,
-                waterCell.y + dir.y
-            };
+            GridPos neighbor = {waterCell.x + dir.x, waterCell.y + dir.y};
 
-            if (
-                neighbor.x < 0 ||
-                neighbor.x >= gridWidth ||
-                neighbor.y < 0 ||
-                neighbor.y >= gridHeight
-            )
+            if (neighbor.x < 0 || neighbor.x >= gridWidth || neighbor.y < 0 || neighbor.y >= gridHeight)
             {
                 isOuterWaterCell = true;
                 break;
@@ -440,6 +427,9 @@ void Lake::dryOneLayer()
     regenerateSandBoundary();
 }
 
+/*
+    Expands all lakes by a number of layers.
+*/
 void Lake::floodAll(GameWorld& world, int layers)
 {
     if (layers <= 0)
@@ -458,6 +448,10 @@ void Lake::floodAll(GameWorld& world, int layers)
     rebuildLakeTerrain(world);
 }
 
+/*
+    Shrinks all lakes by a number of layers.
+    Empty lakes are removed.
+*/
 void Lake::dryAll(GameWorld& world, int layers)
 {
     if (layers <= 0)
@@ -486,6 +480,9 @@ void Lake::dryAll(GameWorld& world, int layers)
     rebuildLakeTerrain(world);
 }
 
+/*
+    Counts all water cells across all lakes.
+*/
 int Lake::getTotalWaterBlocks()
 {
     int count = 0;
@@ -498,6 +495,10 @@ int Lake::getTotalWaterBlocks()
     return count;
 }
 
+/*
+    Drinks from one water cell.
+    A water tile disappears only after enough drinking ticks.
+*/
 bool Lake::drinkWaterAt(GameWorld& world, int x, int y)
 {
     if (!world.isInsideGrid(x, y))
@@ -528,6 +529,9 @@ bool Lake::drinkWaterAt(GameWorld& world, int x, int y)
     return true;
 }
 
+/*
+    Removes drinking progress for water cells that no longer exist.
+*/
 void Lake::resetWaterDrinkingProgressForMissingWater()
 {
     for (auto it = waterDrinkTicksRemaining.begin(); it != waterDrinkTicksRemaining.end(); )
@@ -554,6 +558,9 @@ void Lake::resetWaterDrinkingProgressForMissingWater()
     }
 }
 
+/*
+    Finds the nearest water cell across all lakes.
+*/
 bool Lake::getNearestWaterCell(int x, int y, int& waterX, int& waterY)
 {
     bool found = false;
@@ -563,12 +570,7 @@ bool Lake::getNearestWaterCell(int x, int y, int& waterX, int& waterY)
     {
         for (const GridPos& waterCell : lake.getCells())
         {
-            int distance = GridUtils::manhattanDistance(
-                x,
-                y,
-                waterCell.x,
-                waterCell.y
-            );
+            int distance = GridUtils::manhattanDistance(x, y, waterCell.x, waterCell.y);
 
             if (!found || distance < bestDistance)
             {
@@ -583,14 +585,10 @@ bool Lake::getNearestWaterCell(int x, int y, int& waterX, int& waterY)
     return found;
 }
 
-bool Lake::getNearestWaterCellWithinRange(
-    const GameWorld& world,
-    int x,
-    int y,
-    int range,
-    int& waterX,
-    int& waterY
-)
+/*
+    Finds the nearest water cell within a limited search range.
+*/
+bool Lake::getNearestWaterCellWithinRange(const GameWorld& world, int x, int y, int range, int& waterX, int& waterY)
 {
     if (range <= 0)
     {

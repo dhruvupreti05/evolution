@@ -19,33 +19,26 @@ std::vector<Human> Human::humans;
 int Human::nextId = 0;
 int Human::inspectedHumanId = -1;
 
+/*
+    Checks whether an action is aimed at a specific human's current tile.
+    Used when confirming that two humans chose to mate with each other.
+*/
 static bool targetsEntity(const Action& action, const Human& human)
 {
     return action.targetX == human.getX() && action.targetY == human.getY();
 }
 
-Human::Human(int gridX, int gridY)
-    : Entity(
-          gridX,
-          gridY,
-          Config::HUMAN_START_HEALTH +
-              (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) -
-               Config::HUMAN_START_HEALTH_BUFFER),
-          Config::HUMAN_START_THIRST +
-              (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) -
-               Config::HUMAN_START_THIRST_BUFFER),
-          Config::HUMAN_START_HUNGER +
-              (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) -
-               Config::HUMAN_START_HUNGER_BUFFER)
-      ),
-      Food(Config::TICKS_PER_MEAL_HUMAN, Config::HUNGER_PER_TICK_MEAL_HUMAN),
-      age(0),
-      gender((rand() % 2 == 0) ? Gender::Male : Gender::Female),
-      id(nextId++)
+/*
+    Creates a human with randomized starting stats, a random gender, and a unique ID.
+*/
+Human::Human(int gridX, int gridY) : Entity(gridX, gridY, Config::HUMAN_START_HEALTH + (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) - Config::HUMAN_START_HEALTH_BUFFER), Config::HUMAN_START_THIRST + (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) - Config::HUMAN_START_THIRST_BUFFER), Config::HUMAN_START_HUNGER + (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) - Config::HUMAN_START_HUNGER_BUFFER)), Food(Config::TICKS_PER_MEAL_HUMAN, Config::HUNGER_PER_TICK_MEAL_HUMAN), age(0), gender((rand() % 2 == 0) ? Gender::Male : Gender::Female), id(nextId++)
 {
     setRandomBrain();
 }
 
+/*
+    Spawns the starting humans on non-water tiles.
+*/
 void Human::init(GameWorld& world)
 {
     for (int i = 0; i < Config::NUM_PLAYERS; ++i)
@@ -58,12 +51,16 @@ void Human::init(GameWorld& world)
             gridX = rand() % world.getGridWidth();
             gridY = rand() % world.getGridHeight();
         }
-        while ( world.getTile(gridX, gridY) == TileType::Water || Human::isHumanAt(gridX, gridY));
+        while (world.getTile(gridX, gridY) == TileType::Water || Human::isHumanAt(gridX, gridY));
 
         humans.emplace_back(gridX, gridY);
     }
 }
 
+/*
+    Updates one human.
+    Dead humans only keep their body timer running.
+*/
 void Human::update(GameWorld& world)
 {
     if (dead)
@@ -79,34 +76,55 @@ void Human::update(GameWorld& world)
     Entity::update(world);
 }
 
+/*
+    Returns whether this dead human still has an edible body.
+*/
 bool Human::hasBody() const
 {
     return isEdible();
 }
 
+/*
+    Returns whether this human's body can currently be eaten.
+*/
 bool Human::isBodyEdible() const
 {
     return isEdible();
 }
 
+/*
+    Body claiming is currently disabled, so bodies are never marked as claimed.
+*/
 bool Human::isBodyClaimedThisTick() const
 {
     return false;
 }
 
+/*
+    Placeholder for body-claiming logic.
+*/
 void Human::claimBodyForEating()
 {
 }
 
+/*
+    Placeholder for resetting body-claiming logic each tick.
+*/
 void Human::resetBodyEatingClaims()
 {
 }
 
+/*
+    Removes one eating tick from this human's dead body.
+*/
 void Human::eatBodyOneTick()
 {
     eatOneTick();
 }
 
+/*
+    Lowers survival stats and increases age each tick.
+*/
 void Human::decayStats()
 {
     health -= Config::HUMAN_HEALTH_DECAY;
@@ -130,6 +148,10 @@ void Human::decayStats()
     }
 }
 
+/*
+    Marks the human as dead if any survival stat reaches zero.
+    Death also resets the body food timer so predators can eat it.
+*/
 void Human::checkDeath()
 {
     if (dead)
@@ -145,6 +167,9 @@ void Human::checkDeath()
     }
 }
 
+/*
+    Saves one movement attempt into the circular movement history.
+*/
 void Human::recordMoveAttempt(MoveAttempt attempt)
 {
     previousMoves[moveMemoryIndex] = attempt;
@@ -157,6 +182,9 @@ void Human::recordMoveAttempt(MoveAttempt attempt)
     }
 }
 
+/*
+    Returns the most recent move attempt.
+*/
 MoveAttempt Human::getPreviousMove() const
 {
     int previousIndex = moveMemoryIndex - 1;
@@ -169,6 +197,9 @@ MoveAttempt Human::getPreviousMove() const
     return previousMoves[previousIndex];
 }
 
+/*
+    Picks a random direction, including staying still.
+*/
 Direction Human::getRandomDirection() const
 {
     int choice = rand() % 5;
@@ -195,6 +226,9 @@ Direction Human::getRandomDirection() const
     }
 }
 
+/*
+    Converts a direction into x/y movement.
+*/
 void Human::directionToDelta(Direction direction, int& dx, int& dy) const
 {
     dx = 0;
@@ -224,6 +258,10 @@ void Human::directionToDelta(Direction direction, int& dx, int& dy) const
     }
 }
 
+/*
+    Updates the direction the human is facing.
+    Staying still does not change orientation.
+*/
 void Human::updateOrientation(Direction direction)
 {
     switch (direction)
@@ -250,6 +288,10 @@ void Human::updateOrientation(Direction direction)
     }
 }
 
+/*
+    Tries to move the human one tile.
+    Failed moves are still recorded so movement history stays accurate.
+*/
 void Human::move(Direction direction, GameWorld& world)
 {
     if (dead)
@@ -281,13 +323,7 @@ void Human::move(Direction direction, GameWorld& world)
         return;
     }
 
-    if (
-        direction != Direction::Stay &&
-        (
-            Human::isBlockingEntityAt(newX, newY) ||
-            Predator::isPredatorAt(newX, newY)
-        )
-    )
+    if (direction != Direction::Stay && (Human::isBlockingEntityAt(newX, newY) || Predator::isPredatorAt(newX, newY)))
     {
         recordMoveAttempt(attempt);
         return;
@@ -311,10 +347,8 @@ void Human::move(Direction direction, GameWorld& world)
         {
             MoveAttempt previousMove = getPreviousMove();
 
-            shouldMoveThroughWater =
-                previousMove.direction == direction &&
-                previousMove.tile == TileType::Water &&
-                previousMove.succeeded == false;
+            // A human only enters water after trying the same water move twice in a row.
+            shouldMoveThroughWater = previousMove.direction == direction && previousMove.tile == TileType::Water && previousMove.succeeded == false;
         }
 
         if (shouldMoveThroughWater)
@@ -346,6 +380,9 @@ void Human::move(Direction direction, GameWorld& world)
     recordMoveAttempt(attempt);
 }
 
+/*
+    Moves the human in a random direction.
+*/
 void Human::moveRandomly(GameWorld& world)
 {
     Direction direction = getRandomDirection();
@@ -353,12 +390,11 @@ void Human::moveRandomly(GameWorld& world)
     move(direction, world);
 }
 
-void Human::orientationToBasis(
-    int& forwardDx,
-    int& forwardDy,
-    int& rightDx,
-    int& rightDy
-) const
+/*
+    Converts the human's orientation into forward and right direction vectors.
+    Vision uses these to turn relative coordinates into world coordinates.
+*/
+void Human::orientationToBasis(int& forwardDx, int& forwardDy, int& rightDx, int& rightDy) const
 {
     forwardDx = 0;
     forwardDy = 0;
@@ -397,11 +433,18 @@ void Human::orientationToBasis(
     }
 }
 
+/*
+    Filters out boring visible tiles from the inspector list.
+*/
 bool Human::shouldLogVisibleTile(TileType tile) const
 {
     return tile != TileType::Empty && tile != TileType::Sand;
 }
 
+/*
+    Builds the list of tiles and entities visible in front of the human.
+    Vision widens with distance, making a triangular view shape.
+*/
 std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
 {
     std::vector<VisibleTile> visibleTiles;
@@ -418,7 +461,6 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
 
     orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
 
-    // First: see world tiles like water, crop, trees, etc.
     for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
     {
         int sideLimit = forward - 1;
@@ -440,17 +482,10 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
                 continue;
             }
 
-            visibleTiles.push_back({
-                tile,
-                forward,
-                side,
-                worldX,
-                worldY
-            });
+            visibleTiles.push_back({tile, forward, side, worldX, worldY});
         }
     }
 
-    // Second: see other humans.
     for (const auto& otherHuman : humans)
     {
         if (otherHuman.isDead())
@@ -481,17 +516,9 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
             continue;
         }
 
-        visibleTiles.push_back({
-            TileType::Human,
-            forward,
-            side,
-            otherHuman.getX(),
-            otherHuman.getY()
-        });
+        visibleTiles.push_back({TileType::Human, forward, side, otherHuman.getX(), otherHuman.getY()});
     }
 
-    // Third: see predators.
-    // This is after world tiles, so water predators draw over water.
     for (const auto& predator : Predator::getPredators())
     {
         if (predator.isDead())
@@ -517,18 +544,16 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
             continue;
         }
 
-        visibleTiles.push_back({
-            TileType::Predator,
-            forward,
-            side,
-            predator.getX(),
-            predator.getY()
-        });
+        visibleTiles.push_back({TileType::Predator, forward, side, predator.getX(), predator.getY()});
     }
 
     return visibleTiles;
 }
 
+/*
+    Draws one living human.
+    The inspected human is drawn with its vision outline and highlight color.
+*/
 void Human::draw(GameWorld& world) const
 {
     if (dead)
@@ -547,6 +572,9 @@ void Human::draw(GameWorld& world) const
     }
 }
 
+/*
+    Draws all edible dead bodies.
+*/
 void Human::drawBodies(GameWorld& world)
 {
     for (const auto& human : humans)
@@ -558,6 +586,10 @@ void Human::drawBodies(GameWorld& world)
     }
 }
 
+/*
+    Updates every human in phases.
+    Mating is resolved between choosing actions and executing normal actions.
+*/
 void Human::updateHumans(GameWorld& world)
 {
     for (auto& human : humans)
@@ -596,10 +628,7 @@ void Human::updateHumans(GameWorld& world)
             continue;
         }
 
-        if (
-            human.hasPreparedAction() &&
-            human.getPreparedAction().type != ActionType::Mate
-        )
+        if (human.hasPreparedAction() && human.getPreparedAction().type != ActionType::Mate)
         {
             human.executePreparedAction(world);
         }
@@ -610,6 +639,10 @@ void Human::updateHumans(GameWorld& world)
     }
 }
 
+/*
+    Moves every human randomly.
+    Mainly useful for simple testing behavior.
+*/
 void Human::moveHumans(GameWorld& world)
 {
     for (auto& human : humans)
@@ -618,6 +651,9 @@ void Human::moveHumans(GameWorld& world)
     }
 }
 
+/*
+    Draws all humans, with the inspected human drawn last so it appears on top.
+*/
 void Human::drawHumans(GameWorld& world)
 {
     int selectedId = Human::getInspectedHumanId();
@@ -639,66 +675,105 @@ void Human::drawHumans(GameWorld& world)
     }
 }
 
+/*
+    Returns the shared human list.
+*/
 std::vector<Human>& Human::getHumans()
 {
     return humans;
 }
 
+/*
+    Sets which human the inspector is currently viewing.
+*/
 void Human::setInspectedHumanId(int humanId)
 {
     inspectedHumanId = humanId;
 }
 
+/*
+    Clears the inspected human selection.
+*/
 void Human::clearInspectedHuman()
 {
     inspectedHumanId = -1;
 }
 
+/*
+    Returns the human's grid x position.
+*/
 int Human::getX() const
 {
     return x;
 }
 
+/*
+    Returns the human's grid y position.
+*/
 int Human::getY() const
 {
     return y;
 }
 
+/*
+    Returns the human's current health.
+*/
 int Human::getHealth() const
 {
     return health;
 }
 
+/*
+    Returns the human's current thirst.
+*/
 int Human::getThirst() const
 {
     return thirst;
 }
 
+/*
+    Returns the human's current hunger.
+*/
 int Human::getHunger() const
 {
     return hunger;
 }
 
+/*
+    Returns the human's age counter.
+*/
 int Human::getAge() const
 {
     return age;
 }
 
+/*
+    Returns the human's unique ID.
+*/
 int Human::getId() const
 {
     return id;
 }
 
+/*
+    Returns the human's gender.
+*/
 Gender Human::getGender() const
 {
     return gender;
 }
 
+/*
+    Returns the direction this human is facing.
+*/
 Orientation Human::getOrientation() const
 {
     return orientation;
 }
 
+/*
+    Returns gender as text for the UI.
+*/
 std::string Human::getGenderString() const
 {
     switch (gender)
@@ -714,6 +789,9 @@ std::string Human::getGenderString() const
     }
 }
 
+/*
+    Returns orientation as text for the UI.
+*/
 std::string Human::getOrientationString() const
 {
     switch (orientation)
@@ -735,16 +813,26 @@ std::string Human::getOrientationString() const
     }
 }
 
+/*
+    Returns whether this human is dead.
+*/
 bool Human::isDead() const
 {
     return dead;
 }
 
+/*
+    Returns the ID of the human selected in the inspector.
+*/
 int Human::getInspectedHumanId()
 {
     return inspectedHumanId;
 }
 
+/*
+    Draws an outline around the inspected human's visible area.
+    Only outer edges are drawn so the vision shape looks like one connected region.
+*/
 void Human::drawVisionOutline(GameWorld& world) const
 {
     if (dead)
@@ -786,9 +874,9 @@ void Human::drawVisionOutline(GameWorld& world) const
         int gx = cell.first;
         int gy = cell.second;
 
-        bool hasUp    = visionCells.count({gx, gy - 1}) > 0;
-        bool hasDown  = visionCells.count({gx, gy + 1}) > 0;
-        bool hasLeft  = visionCells.count({gx - 1, gy}) > 0;
+        bool hasUp = visionCells.count({gx, gy - 1}) > 0;
+        bool hasDown = visionCells.count({gx, gy + 1}) > 0;
+        bool hasLeft = visionCells.count({gx - 1, gy}) > 0;
         bool hasRight = visionCells.count({gx + 1, gy}) > 0;
 
         float px = gx * cellSize;
@@ -801,14 +889,7 @@ void Human::drawVisionOutline(GameWorld& world) const
 
         if (!hasDown)
         {
-            world.drawLine(
-                px,
-                py + cellSize,
-                px + cellSize,
-                py + cellSize,
-                sf::Color::Black,
-                2.0f
-            );
+            world.drawLine(px, py + cellSize, px + cellSize, py + cellSize, sf::Color::Black, 2.0f);
         }
 
         if (!hasLeft)
@@ -818,23 +899,22 @@ void Human::drawVisionOutline(GameWorld& world) const
 
         if (!hasRight)
         {
-            world.drawLine(
-                px + cellSize,
-                py,
-                px + cellSize,
-                py + cellSize,
-                sf::Color::Black,
-                2.0f
-            );
+            world.drawLine(px + cellSize, py, px + cellSize, py + cellSize, sf::Color::Black, 2.0f);
         }
     }
 }
 
+/*
+    Moves the human directly from manual or inspector controls.
+*/
 void Human::controlledMove(Direction direction, GameWorld& world)
 {
     move(direction, world);
 }
 
+/*
+    Finds the tile directly in front of the human.
+*/
 void Human::getFacingCell(int& targetX, int& targetY) const
 {
     int forwardDx;
@@ -848,11 +928,17 @@ void Human::getFacingCell(int& targetX, int& targetY) const
     targetY = y + forwardDy;
 }
 
+/*
+    Returns whether a tile type can be stored in the human inventory.
+*/
 bool Human::canPickUp(TileType tile) const
 {
     return tile == TileType::Water || tile == TileType::Crop;
 }
 
+/*
+    Returns whether the human can drop an item onto a target tile.
+*/
 bool Human::canDropOn(TileType tile, int targetX, int targetY) const
 {
     if (tile != TileType::Empty && tile != TileType::Sand)
@@ -868,11 +954,17 @@ bool Human::canDropOn(TileType tile, int targetX, int targetY) const
     return true;
 }
 
+/*
+    Returns whether this human can currently be eaten as a body.
+*/
 bool Human::isEdible() const
 {
     return dead && deadBodyTicksRemaining > 0 && Food::isEdible();
 }
 
+/*
+    Picks up the crop or water directly in front of the human.
+*/
 bool Human::tryPickUp(GameWorld& world)
 {
     if (dead)
@@ -925,6 +1017,9 @@ bool Human::tryPickUp(GameWorld& world)
     return false;
 }
 
+/*
+    Drops the most recently picked-up item onto the tile in front of the human.
+*/
 bool Human::tryDrop(GameWorld& world)
 {
     if (dead)
@@ -979,11 +1074,18 @@ bool Human::tryDrop(GameWorld& world)
     return false;
 }
 
+/*
+    Returns the human's inventory.
+*/
 const std::vector<TileType>& Human::getInventory() const
 {
     return inventory;
 }
 
+/*
+    Checks whether a living human is standing on a tile.
+    Uses occupancy lookup when available, otherwise falls back to scanning.
+*/
 bool Human::isHumanAt(int x, int y)
 {
     if (EntityOccupancy::hasBeenBuilt())
@@ -1007,6 +1109,9 @@ bool Human::isHumanAt(int x, int y)
     return false;
 }
 
+/*
+    Checks whether a tile is blocked by a living human or an edible dead body.
+*/
 bool Human::isBlockingEntityAt(int x, int y)
 {
     if (EntityOccupancy::hasBeenBuilt())
@@ -1038,6 +1143,9 @@ bool Human::isBlockingEntityAt(int x, int y)
     return false;
 }
 
+/*
+    Finds a living human directly next to a position.
+*/
 Human* Human::getAdjacentLivingHuman(int x, int y)
 {
     for (const auto& direction : GridUtils::FOUR_DIRECTIONS)
@@ -1074,6 +1182,9 @@ Human* Human::getAdjacentLivingHuman(int x, int y)
     return nullptr;
 }
 
+/*
+    Finds an edible dead body directly next to a position.
+*/
 Human* Human::getAdjacentEdibleBody(int x, int y)
 {
     for (auto& human : humans)
@@ -1092,6 +1203,9 @@ Human* Human::getAdjacentEdibleBody(int x, int y)
     return nullptr;
 }
 
+/*
+    Finds the nearest living human or edible body with no range limit.
+*/
 Human* Human::getNearestLivingHumanOrBody(int x, int y)
 {
     Human* nearest = nullptr;
@@ -1120,6 +1234,9 @@ Human* Human::getNearestLivingHumanOrBody(int x, int y)
     return nearest;
 }
 
+/*
+    Counts living humans.
+*/
 int Human::countAlive()
 {
     int count = 0;
@@ -1135,6 +1252,9 @@ int Human::countAlive()
     return count;
 }
 
+/*
+    Counts dead humans.
+*/
 int Human::countDead()
 {
     int count = 0;
@@ -1150,12 +1270,19 @@ int Human::countDead()
     return count;
 }
 
+/*
+    Attempts to move and returns success.
+    This currently returns true even if the move was blocked.
+*/
 bool Human::tryMove(Direction direction, GameWorld& world)
 {
     move(direction, world);
     return true;
 }
 
+/*
+    Tries to eat a crop from an adjacent tile.
+*/
 bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
@@ -1179,6 +1306,9 @@ bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
     return true;
 }
 
+/*
+    Tries to drink water from an adjacent tile.
+*/
 bool Human::tryDrinkAt(GameWorld& world, int targetX, int targetY)
 {
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
@@ -1191,29 +1321,39 @@ bool Human::tryDrinkAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    increaseThirst(
-        Config::HUMAN_THIRST_PER_TICK_WATER,
-        Config::HUMAN_START_THIRST
-    );
+    increaseThirst(Config::HUMAN_THIRST_PER_TICK_WATER, Config::HUMAN_START_THIRST);
 
     return true;
 }
 
+/*
+    Humans currently do not attack.
+*/
 bool Human::tryAttackAt(GameWorld& world, int targetX, int targetY)
 {
     return false;
 }
 
+/*
+    Gives the human a random brain.
+*/
 void Human::setRandomBrain()
 {
     setBrain(std::make_unique<RandomBrain>());
 }
 
+/*
+    Gives the human a manual brain.
+*/
 void Human::setManualBrain()
 {
     setBrain(std::make_unique<ManualBrain>());
 }
 
+/*
+    Sends an action to the manual brain.
+    If the human is not already manual-controlled, it switches first.
+*/
 void Human::giveManualAction(const Action& action)
 {
     ManualBrain* manualBrain = dynamic_cast<ManualBrain*>(getBrain());
@@ -1230,6 +1370,9 @@ void Human::giveManualAction(const Action& action)
     }
 }
 
+/*
+    Checks whether two humans are valid mating partners right now.
+*/
 bool Human::canMateWith(const Human& other) const
 {
     if (dead || other.dead)
@@ -1250,14 +1393,17 @@ bool Human::canMateWith(const Human& other) const
     return gender != other.gender;
 }
 
+/*
+    Human mating is resolved as a pair action later, not immediately here.
+*/
 bool Human::tryMateAt(GameWorld& world, int targetX, int targetY)
 {
-    // Mating is not executed one entity at a time.
-    // Human::resolveMatingActions() handles it after all humans choose actions,
-    // because both parents must choose Mate on the same tick.
     return false;
 }
 
+/*
+    Finds an adjacent human this human can mate with.
+*/
 Human* Human::getAdjacentMateCandidate(const Human& human)
 {
     for (auto& other : humans)
@@ -1276,24 +1422,12 @@ Human* Human::getAdjacentMateCandidate(const Human& human)
     return nullptr;
 }
 
-bool Human::findChildSpawnCell(
-    GameWorld& world,
-    const Human& parentA,
-    const Human& parentB,
-    int& childX,
-    int& childY
-)
+/*
+    Finds an open neighboring cell around either parent for the child to spawn in.
+*/
+bool Human::findChildSpawnCell(GameWorld& world, const Human& parentA, const Human& parentB, int& childX, int& childY)
 {
-    const int candidates[8][2] = {
-        {parentA.getX() + 1, parentA.getY()},
-        {parentA.getX() - 1, parentA.getY()},
-        {parentA.getX(), parentA.getY() + 1},
-        {parentA.getX(), parentA.getY() - 1},
-        {parentB.getX() + 1, parentB.getY()},
-        {parentB.getX() - 1, parentB.getY()},
-        {parentB.getX(), parentB.getY() + 1},
-        {parentB.getX(), parentB.getY() - 1}
-    };
+    const int candidates[8][2] = {{parentA.getX() + 1, parentA.getY()}, {parentA.getX() - 1, parentA.getY()}, {parentA.getX(), parentA.getY() + 1}, {parentA.getX(), parentA.getY() - 1}, {parentB.getX() + 1, parentB.getY()}, {parentB.getX() - 1, parentB.getY()}, {parentB.getX(), parentB.getY() + 1}, {parentB.getX(), parentB.getY() - 1}};
 
     for (const auto& candidate : candidates)
     {
@@ -1325,6 +1459,10 @@ bool Human::findChildSpawnCell(
     return false;
 }
 
+/*
+    Resolves mating after all humans have chosen their actions.
+    A child is only created when both parents target each other on the same tick.
+*/
 void Human::resolveMatingActions(GameWorld& world)
 {
     std::set<int> alreadyMatedIds;
@@ -1340,12 +1478,7 @@ void Human::resolveMatingActions(GameWorld& world)
     {
         Human& parentA = humans[i];
 
-        if (
-            parentA.dead ||
-            alreadyMated(parentA.getId()) ||
-            !parentA.hasPreparedAction() ||
-            parentA.getPreparedAction().type != ActionType::Mate
-        )
+        if (parentA.dead || alreadyMated(parentA.getId()) || !parentA.hasPreparedAction() || parentA.getPreparedAction().type != ActionType::Mate)
         {
             continue;
         }
@@ -1354,12 +1487,7 @@ void Human::resolveMatingActions(GameWorld& world)
         {
             Human& parentB = humans[j];
 
-            if (
-                parentB.dead ||
-                alreadyMated(parentB.getId()) ||
-                !parentB.hasPreparedAction() ||
-                parentB.getPreparedAction().type != ActionType::Mate
-            )
+            if (parentB.dead || alreadyMated(parentB.getId()) || !parentB.hasPreparedAction() || parentB.getPreparedAction().type != ActionType::Mate)
             {
                 continue;
             }
@@ -1369,10 +1497,7 @@ void Human::resolveMatingActions(GameWorld& world)
                 continue;
             }
 
-            if (
-                !targetsEntity(parentA.getPreparedAction(), parentB) ||
-                !targetsEntity(parentB.getPreparedAction(), parentA)
-            )
+            if (!targetsEntity(parentA.getPreparedAction(), parentB) || !targetsEntity(parentB.getPreparedAction(), parentA))
             {
                 continue;
             }
@@ -1391,6 +1516,7 @@ void Human::resolveMatingActions(GameWorld& world)
             humans.emplace_back(childX, childY);
             int childId = humans.back().getId();
 
+            // emplace_back can move vector storage, so parent references are refreshed by ID after birth.
             EntityOccupancy::rebuild(world);
 
             DebugLog::birth("Human", parentAId, parentBId, childId);
@@ -1418,18 +1544,14 @@ void Human::resolveMatingActions(GameWorld& world)
             if (parentAAfterBirth != nullptr)
             {
                 parentAAfterBirth->addChild(childId);
-                parentAAfterBirth->startMatingCooldown(
-                    Config::HUMAN_MATING_COOLDOWN_TICKS
-                );
+                parentAAfterBirth->startMatingCooldown(Config::HUMAN_MATING_COOLDOWN_TICKS);
                 parentAAfterBirth->clearPreparedAction();
             }
 
             if (parentBAfterBirth != nullptr)
             {
                 parentBAfterBirth->addChild(childId);
-                parentBAfterBirth->startMatingCooldown(
-                    Config::HUMAN_MATING_COOLDOWN_TICKS
-                );
+                parentBAfterBirth->startMatingCooldown(Config::HUMAN_MATING_COOLDOWN_TICKS);
                 parentBAfterBirth->clearPreparedAction();
             }
 
@@ -1441,6 +1563,9 @@ void Human::resolveMatingActions(GameWorld& world)
     }
 }
 
+/*
+    Finds a human by unique ID.
+*/
 Human* Human::getById(int id)
 {
     for (Human& human : humans)
@@ -1454,11 +1579,10 @@ Human* Human::getById(int id)
     return nullptr;
 }
 
-Human* Human::getNearestLivingHumanOrBodyWithinRange(
-    int x,
-    int y,
-    int range
-)
+/*
+    Finds the nearest living human or edible body within a limited range.
+*/
+Human* Human::getNearestLivingHumanOrBodyWithinRange(int x, int y, int range)
 {
     if (range <= 0)
     {
@@ -1512,12 +1636,7 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(
                 continue;
             }
 
-            int distance = GridUtils::manhattanDistance(
-                x,
-                y,
-                human.x,
-                human.y
-            );
+            int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
 
             if (distance <= range && distance < bestDistance)
             {
@@ -1539,12 +1658,7 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(
             continue;
         }
 
-        int distance = GridUtils::manhattanDistance(
-            x,
-            y,
-            human.x,
-            human.y
-        );
+        int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
 
         if (distance <= range && distance < bestDistance)
         {

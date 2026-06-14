@@ -1,15 +1,10 @@
 #include "ui/uidrawhelper.h"
 
-void UiDrawHelper::drawText(
-    sf::RenderWindow& window,
-    const sf::Font& font,
-    bool fontLoaded,
-    const std::string& text,
-    float x,
-    float y,
-    unsigned int size,
-    sf::Color color
-)
+/*
+    Draws normal left-aligned text.
+    If the font failed to load, it skips drawing instead of crashing or showing broken text.
+*/
+void UiDrawHelper::drawText(sf::RenderWindow& window, const sf::Font& font, bool fontLoaded, const std::string& text, float x, float y, unsigned int size, sf::Color color)
 {
     if (!fontLoaded)
     {
@@ -26,16 +21,11 @@ void UiDrawHelper::drawText(
     window.draw(label);
 }
 
-void UiDrawHelper::drawCenteredText(
-    sf::RenderWindow& window,
-    const sf::Font& font,
-    bool fontLoaded,
-    const std::string& text,
-    float centerX,
-    float y,
-    unsigned int size,
-    sf::Color color
-)
+/*
+    Draws text centered around a given x position.
+    The origin is shifted to the middle of the text bounds before positioning.
+*/
+void UiDrawHelper::drawCenteredText(sf::RenderWindow& window, const sf::Font& font, bool fontLoaded, const std::string& text, float centerX, float y, unsigned int size, sf::Color color)
 {
     if (!fontLoaded)
     {
@@ -50,26 +40,18 @@ void UiDrawHelper::drawCenteredText(
 
     sf::FloatRect bounds = label.getLocalBounds();
 
-    label.setOrigin(
-        bounds.left + bounds.width / 2.0f,
-        bounds.top + bounds.height / 2.0f
-    );
+    // SFML text bounds can have an offset, so bounds.left/top are included when centering.
+    label.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
 
     label.setPosition(centerX, y);
 
     window.draw(label);
 }
 
-void UiDrawHelper::drawPanelBackground(
-    sf::RenderWindow& window,
-    float x,
-    float y,
-    float width,
-    float height,
-    sf::Color fillColor,
-    sf::Color outlineColor,
-    float outlineThickness
-)
+/*
+    Draws a reusable rectangle panel for UI windows.
+*/
+void UiDrawHelper::drawPanelBackground(sf::RenderWindow& window, float x, float y, float width, float height, sf::Color fillColor, sf::Color outlineColor, float outlineThickness)
 {
     sf::RectangleShape panel;
     panel.setSize(sf::Vector2f(width, height));

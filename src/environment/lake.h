@@ -7,16 +7,14 @@
 #include "environment/clumps.h"
 #include "core/gameworld.h"
 
+/*
+    Lake terrain feature built from a clump of water cells.
+    Lakes also manage their surrounding sand, water pickup/drop, drinking progress, floods, and droughts.
+*/
 class Lake : public Clump
 {
 public:
-    Lake(
-        int centerX,
-        int centerY,
-        int numWaterBlocks,
-        int gridWidth,
-        int gridHeight
-    );
+    Lake(int centerX, int centerY, int numWaterBlocks, int gridWidth, int gridHeight);
 
     static void init(GameWorld& world);
     static void drawLakes(GameWorld& world);
@@ -25,14 +23,7 @@ public:
     void draw(GameWorld& world) const;
 
     static bool getNearestWaterCell(int x, int y, int& waterX, int& waterY);
-    static bool getNearestWaterCellWithinRange(
-        const GameWorld& world,
-        int x,
-        int y,
-        int range,
-        int& waterX,
-        int& waterY
-    );
+    static bool getNearestWaterCellWithinRange(const GameWorld& world, int x, int y, int range, int& waterX, int& waterY);
 
     const std::set<GridPos>& getSandCells() const;
 
@@ -49,8 +40,11 @@ public:
 
 private:
     static std::vector<Lake> lakes;
+
+    // Tracks how many drinking ticks are left for each water tile being used.
     static std::map<GridPos, int> waterDrinkTicksRemaining;
 
+    // Sand cells are generated around the lake's water cells.
     std::set<GridPos> sandCells;
 
     void generateSandBoundary();
@@ -62,6 +56,7 @@ private:
     void addWaterCell(int x, int y);
     void removeWaterCell(int x, int y);
 
+    // Rewrites the world tiles to match the current lake and sand cells.
     static void rebuildLakeTerrain(GameWorld& world);
 
     void dryOneLayer();

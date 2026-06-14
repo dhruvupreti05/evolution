@@ -18,6 +18,10 @@ int Predator::nextId = 0;
 
 namespace
 {
+    /*
+        Finds a random valid land tile for a land predator.
+        It avoids water, crops, and blocked human/body tiles.
+    */
     bool findRandomLandSpawn(GameWorld& world, int& x, int& y)
     {
         for (int attempt = 0; attempt < 5000; ++attempt)
@@ -50,6 +54,9 @@ namespace
         return false;
     }
 
+    /*
+        Finds a random valid water tile for a water predator.
+    */
     bool findRandomWaterSpawn(GameWorld& world, int& x, int& y)
     {
         for (int attempt = 0; attempt < 5000; ++attempt)
@@ -76,20 +83,17 @@ namespace
     }
 }
 
-Predator::Predator(int gridX, int gridY, PredatorType type)
-    : Entity(
-          gridX,
-          gridY,
-          Config::PREDATOR_START_HEALTH,
-          Config::PREDATOR_START_THIRST,
-          Config::PREDATOR_START_HUNGER
-      ),
-      type(type),
-      id(nextId++)
+/*
+    Creates a predator with starting survival stats, a type, a unique ID, and a smart predator brain.
+*/
+Predator::Predator(int gridX, int gridY, PredatorType type) : Entity(gridX, gridY, Config::PREDATOR_START_HEALTH, Config::PREDATOR_START_THIRST, Config::PREDATOR_START_HUNGER), type(type), id(nextId++)
 {
     setBrain(std::make_unique<PredatorSmartBrain>());
 }
 
+/*
+    Spawns the starting land and water predators.
+*/
 void Predator::init(GameWorld& world)
 {
     for (int i = 0; i < Config::NUMBER_OF_LAND_PREDATORS; ++i)
@@ -115,6 +119,10 @@ void Predator::init(GameWorld& world)
     }
 }
 
+/*
+    Updates every predator in phases.
+    Mating is resolved after all predators choose actions, then normal actions execute.
+*/
 void Predator::updatePredators(GameWorld& world)
 {
     for (auto& predator : predators)
@@ -153,10 +161,7 @@ void Predator::updatePredators(GameWorld& world)
             continue;
         }
 
-        if (
-            predator.hasPreparedAction() &&
-            predator.getPreparedAction().type != ActionType::Mate
-        )
+        if (predator.hasPreparedAction() && predator.getPreparedAction().type != ActionType::Mate)
         {
             predator.executePreparedAction(world);
         }
@@ -167,26 +172,34 @@ void Predator::updatePredators(GameWorld& world)
     }
 }
 
+/*
+    Returns this predator's unique ID.
+*/
 int Predator::getId() const
 {
     return id;
 }
 
+/*
+    Returns whether this predator is a land or water predator.
+*/
 PredatorType Predator::getType() const
 {
     return type;
 }
 
+/*
+    Predator mating is resolved later as a paired action, not directly here.
+*/
 bool Predator::tryMateAt(GameWorld& world, int targetX, int targetY)
 {
     return false;
 }
 
-Predator* Predator::getAdjacentLivingPredator(
-    int x,
-    int y,
-    const Predator* self
-)
+/*
+    Finds a living adjacent predator that can currently mate.
+*/
+Predator* Predator::getAdjacentLivingPredator(int x, int y, const Predator* self)
 {
     if (self != nullptr && !self->canMateNow())
     {
@@ -254,6 +267,9 @@ Predator* Predator::getAdjacentLivingPredator(
     return nullptr;
 }
 
+/*
+    Finds a predator by unique ID.
+*/
 Predator* Predator::getById(int id)
 {
     for (Predator& predator : predators)
@@ -267,25 +283,13 @@ Predator* Predator::getById(int id)
     return nullptr;
 }
 
-bool Predator::findChildSpawnCell(
-    GameWorld& world,
-    const Predator& parentA,
-    const Predator& parentB,
-    PredatorType childType,
-    int& childX,
-    int& childY
-)
+/*
+    Finds a valid neighboring spawn cell around either parent.
+    The child's predator type controls whether the tile must be land or water.
+*/
+bool Predator::findChildSpawnCell(GameWorld& world, const Predator& parentA, const Predator& parentB, PredatorType childType, int& childX, int& childY)
 {
-    const int candidates[8][2] = {
-        {parentA.getX() + 1, parentA.getY()},
-        {parentA.getX() - 1, parentA.getY()},
-        {parentA.getX(), parentA.getY() + 1},
-        {parentA.getX(), parentA.getY() - 1},
-        {parentB.getX() + 1, parentB.getY()},
-        {parentB.getX() - 1, parentB.getY()},
-        {parentB.getX(), parentB.getY() + 1},
-        {parentB.getX(), parentB.getY() - 1}
-    };
+    const int candidates[8][2] = {{parentA.getX() + 1, parentA.getY()}, {parentA.getX() - 1, parentA.getY()}, {parentA.getX(), parentA.getY() + 1}, {parentA.getX(), parentA.getY() - 1}, {parentB.getX() + 1, parentB.getY()}, {parentB.getX() - 1, parentB.getY()}, {parentB.getX(), parentB.getY() + 1}, {parentB.getX(), parentB.getY() - 1}};
 
     for (const auto& candidate : candidates)
     {
@@ -327,6 +331,10 @@ bool Predator::findChildSpawnCell(
     return false;
 }
 
+/*
+    Resolves predator mating after all predators have chosen actions.
+    A child is only created when both parents target each other on the same tick.
+*/
 void Predator::resolveMatingActions(GameWorld& world)
 {
     std::set<int> alreadyMatedIds;
@@ -342,13 +350,7 @@ void Predator::resolveMatingActions(GameWorld& world)
     {
         Predator& parentA = predators[i];
 
-        if (
-            parentA.dead ||
-            !parentA.canMateNow() ||
-            alreadyMated(parentA.getId()) ||
-            !parentA.hasPreparedAction() ||
-            parentA.getPreparedAction().type != ActionType::Mate
-        )
+        if (parentA.dead || !parentA.canMateNow() || alreadyMated(parentA.getId()) || !parentA.hasPreparedAction() || parentA.getPreparedAction().type != ActionType::Mate)
         {
             continue;
         }
@@ -357,41 +359,23 @@ void Predator::resolveMatingActions(GameWorld& world)
         {
             Predator& parentB = predators[j];
 
-            if (
-                parentB.dead ||
-                !parentB.canMateNow() ||
-                alreadyMated(parentB.getId()) ||
-                !parentB.hasPreparedAction() ||
-                parentB.getPreparedAction().type != ActionType::Mate
-            )
+            if (parentB.dead || !parentB.canMateNow() || alreadyMated(parentB.getId()) || !parentB.hasPreparedAction() || parentB.getPreparedAction().type != ActionType::Mate)
             {
                 continue;
             }
 
-            if (
-                !GridUtils::isFourNeighborDistance(
-                    parentA.getX(),
-                    parentA.getY(),
-                    parentB.getX(),
-                    parentB.getY()
-                )
-            )
+            if (!GridUtils::isFourNeighborDistance(parentA.getX(), parentA.getY(), parentB.getX(), parentB.getY()))
             {
                 continue;
             }
 
-            if (
-                parentA.getPreparedAction().targetX != parentB.getX() ||
-                parentA.getPreparedAction().targetY != parentB.getY() ||
-                parentB.getPreparedAction().targetX != parentA.getX() ||
-                parentB.getPreparedAction().targetY != parentA.getY()
-            )
+            if (parentA.getPreparedAction().targetX != parentB.getX() || parentA.getPreparedAction().targetY != parentB.getY() || parentB.getPreparedAction().targetX != parentA.getX() || parentB.getPreparedAction().targetY != parentA.getY())
             {
                 continue;
             }
 
-            PredatorType childType =
-                (rand() % 2 == 0) ? parentA.getType() : parentB.getType();
+            // Child type is randomly inherited from one of the parents.
+            PredatorType childType = (rand() % 2 == 0) ? parentA.getType() : parentB.getType();
 
             int childX;
             int childY;
@@ -407,6 +391,7 @@ void Predator::resolveMatingActions(GameWorld& world)
             predators.emplace_back(childX, childY, childType);
             int childId = predators.back().getId();
 
+            // emplace_back can move vector storage, so old parent references should not be trusted after this.
             EntityOccupancy::rebuild(world);
 
             DebugLog::birth("Predator", parentAId, parentBId, childId);
@@ -417,18 +402,14 @@ void Predator::resolveMatingActions(GameWorld& world)
             if (parentAAfterBirth != nullptr)
             {
                 parentAAfterBirth->addChild(childId);
-                parentAAfterBirth->startMatingCooldown(
-                    Config::PREDATOR_MATING_COOLDOWN_TICKS
-                );
+                parentAAfterBirth->startMatingCooldown(Config::PREDATOR_MATING_COOLDOWN_TICKS);
                 parentAAfterBirth->clearPreparedAction();
             }
 
             if (parentBAfterBirth != nullptr)
             {
                 parentBAfterBirth->addChild(childId);
-                parentBAfterBirth->startMatingCooldown(
-                    Config::PREDATOR_MATING_COOLDOWN_TICKS
-                );
+                parentBAfterBirth->startMatingCooldown(Config::PREDATOR_MATING_COOLDOWN_TICKS);
                 parentBAfterBirth->clearPreparedAction();
             }
 
@@ -440,6 +421,9 @@ void Predator::resolveMatingActions(GameWorld& world)
     }
 }
 
+/*
+    Draws every predator.
+*/
 void Predator::drawPredators(GameWorld& world)
 {
     for (const auto& predator : predators)
@@ -448,6 +432,10 @@ void Predator::drawPredators(GameWorld& world)
     }
 }
 
+/*
+    Updates one predator.
+    Dead predators only keep their body timer running.
+*/
 void Predator::update(GameWorld& world)
 {
     if (dead)
@@ -463,26 +451,31 @@ void Predator::update(GameWorld& world)
     Entity::update(world);
 }
 
+/*
+    Returns whether this dead predator still has a visible body.
+*/
 bool Predator::hasBody() const
 {
     return dead && deadBodyTicksRemaining > 0;
 }
 
+/*
+    Draws all predator bodies.
+*/
 void Predator::drawBodies(GameWorld& world)
 {
     for (const auto& predator : predators)
     {
         if (predator.hasBody())
         {
-            world.drawTile(
-                predator.getX(),
-                predator.getY(),
-                Config::COLOR_DEAD_PREDATOR
-            );
+            world.drawTile(predator.getX(), predator.getY(), Config::COLOR_DEAD_PREDATOR);
         }
     }
 }
 
+/*
+    Lowers predator survival stats each tick.
+*/
 void Predator::decayStats()
 {
     health -= Config::PREDATOR_HEALTH_DECAY;
@@ -505,6 +498,9 @@ void Predator::decayStats()
     }
 }
 
+/*
+    Marks the predator as dead if any survival stat reaches zero.
+*/
 void Predator::checkDeath()
 {
     if (dead)
@@ -519,16 +515,25 @@ void Predator::checkDeath()
     }
 }
 
+/*
+    Returns whether this predator is land-based.
+*/
 bool Predator::isLandPredator() const
 {
     return type == PredatorType::Land;
 }
 
+/*
+    Returns whether this predator is water-based.
+*/
 bool Predator::isWaterPredator() const
 {
     return type == PredatorType::Water;
 }
 
+/*
+    Checks whether this predator type is allowed to move onto a target tile.
+*/
 bool Predator::canMoveTo(GameWorld& world, int targetX, int targetY) const
 {
     if (!world.isInsideGrid(targetX, targetY))
@@ -561,6 +566,9 @@ bool Predator::canMoveTo(GameWorld& world, int targetX, int targetY) const
     return true;
 }
 
+/*
+    Draws one living predator.
+*/
 void Predator::draw(GameWorld& world) const
 {
     if (dead)
@@ -571,6 +579,9 @@ void Predator::draw(GameWorld& world) const
     world.drawTile(x, y, Config::COLOR_PREDATOR);
 }
 
+/*
+    Checks whether a living predator or predator body is on a tile.
+*/
 bool Predator::isPredatorAt(int x, int y)
 {
     if (EntityOccupancy::hasBeenBuilt())
@@ -602,6 +613,9 @@ bool Predator::isPredatorAt(int x, int y)
     return false;
 }
 
+/*
+    Counts living predators.
+*/
 int Predator::countAlive()
 {
     int count = 0;
@@ -617,6 +631,9 @@ int Predator::countAlive()
     return count;
 }
 
+/*
+    Counts dead predators.
+*/
 int Predator::countDead()
 {
     int count = 0;
@@ -632,6 +649,10 @@ int Predator::countDead()
     return count;
 }
 
+/*
+    Kills water predators that are no longer on water.
+    This matters after droughts or other terrain changes.
+*/
 void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
 {
     for (auto& predator : predators)
@@ -661,16 +682,25 @@ void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
     }
 }
 
+/*
+    Returns the shared predator list.
+*/
 const std::vector<Predator>& Predator::getPredators()
 {
     return predators;
 }
 
+/*
+    Returns the editable shared predator list.
+*/
 std::vector<Predator>& Predator::getPredatorsMutable()
 {
     return predators;
 }
 
+/*
+    Tries to move the predator one tile.
+*/
 bool Predator::tryMove(Direction direction, GameWorld& world)
 {
     int dx = 0;
@@ -718,6 +748,9 @@ bool Predator::tryMove(Direction direction, GameWorld& world)
     return true;
 }
 
+/*
+    Tries to eat a human body from an adjacent tile.
+*/
 bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
@@ -739,14 +772,14 @@ bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 
     body->eatBodyOneTick();
 
-    increaseHunger(
-        Config::HUNGER_PER_TICK_MEAL_HUMAN,
-        Config::PREDATOR_START_HUNGER
-    );
+    increaseHunger(Config::HUNGER_PER_TICK_MEAL_HUMAN, Config::PREDATOR_START_HUNGER);
 
     return true;
 }
 
+/*
+    Tries to drink from an adjacent water tile.
+*/
 bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
 {
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
@@ -759,14 +792,14 @@ bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    increaseThirst(
-        Config::PREDATOR_THIRST_PER_TICK_WATER,
-        Config::PREDATOR_START_THIRST
-    );
+    increaseThirst(Config::PREDATOR_THIRST_PER_TICK_WATER, Config::PREDATOR_START_THIRST);
 
     return true;
 }
 
+/*
+    Tries to attack an adjacent living human.
+*/
 bool Predator::tryAttackAt(GameWorld& world, int targetX, int targetY)
 {
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))

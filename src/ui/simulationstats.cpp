@@ -12,21 +12,21 @@
 
 #include <algorithm>
 
+/*
+    Loads the font and weather icons used by the stats window.
+*/
 SimulationStats::SimulationStats()
 {
-    fontLoaded = font.loadFromFile(
-        "/System/Library/Fonts/Supplemental/Times New Roman.ttf"
-    );
+    fontLoaded = font.loadFromFile("/System/Library/Fonts/Supplemental/Times New Roman.ttf");
 
-    floodTextureLoaded = floodTexture.loadFromFile(
-        Paths::getAssetPath("flood.png").string()
-        );
+    floodTextureLoaded = floodTexture.loadFromFile(Paths::getAssetPath("flood.png").string());
 
-        droughtTextureLoaded = droughtTexture.loadFromFile(
-            Paths::getAssetPath("drought.jpg").string()
-        );
+    droughtTextureLoaded = droughtTexture.loadFromFile(Paths::getAssetPath("drought.jpg").string());
 }
 
+/*
+    Opens the stats window if it is not already open.
+*/
 void SimulationStats::open()
 {
     if (window.isOpen())
@@ -34,15 +34,12 @@ void SimulationStats::open()
         return;
     }
 
-    window.create(
-        sf::VideoMode(
-            Config::STATS_WINDOW_WIDTH,
-            Config::STATS_WINDOW_HEIGHT
-        ),
-        "Simulation Stats"
-    );
+    window.create(sf::VideoMode(Config::STATS_WINDOW_WIDTH, Config::STATS_WINDOW_HEIGHT), "Simulation Stats");
 }
 
+/*
+    Closes the stats window.
+*/
 void SimulationStats::close()
 {
     if (window.isOpen())
@@ -51,11 +48,18 @@ void SimulationStats::close()
     }
 }
 
+/*
+    Returns whether the stats window is currently open.
+*/
 bool SimulationStats::isOpen() const
 {
     return window.isOpen();
 }
 
+/*
+    Handles stats-window events.
+    Escape and the close button both close the window.
+*/
 void SimulationStats::handleEvents()
 {
     if (!window.isOpen())
@@ -84,6 +88,9 @@ void SimulationStats::handleEvents()
     }
 }
 
+/*
+    Updates and draws the stats window.
+*/
 void SimulationStats::draw(GameWorld& world)
 {
     if (!window.isOpen())
@@ -102,12 +109,7 @@ void SimulationStats::draw(GameWorld& world)
 
     drawPanelBackground();
 
-    drawCenteredText(
-        "Simulation Statistics",
-        Config::STATS_WINDOW_WIDTH / 2.0f,
-        45.0f,
-        24
-    );
+    drawCenteredText("Simulation Statistics", Config::STATS_WINDOW_WIDTH / 2.0f, 45.0f, 24);
 
     drawStatsText();
     drawWeatherBoxes();
@@ -115,18 +117,17 @@ void SimulationStats::draw(GameWorld& world)
     window.display();
 }
 
+/*
+    Draws the main background panel for the stats window.
+*/
 void SimulationStats::drawPanelBackground()
 {
-    UiDrawHelper::drawPanelBackground(
-        window,
-        20.0f,
-        20.0f,
-        Config::STATS_WINDOW_WIDTH - 40.0f,
-        Config::STATS_WINDOW_HEIGHT - 40.0f,
-        sf::Color(255, 238, 200)
-    );
+    UiDrawHelper::drawPanelBackground(window, 20.0f, 20.0f, Config::STATS_WINDOW_WIDTH - 40.0f, Config::STATS_WINDOW_HEIGHT - 40.0f, sf::Color(255, 238, 200));
 }
 
+/*
+    Draws the main simulation numbers.
+*/
 void SimulationStats::drawStatsText()
 {
     float leftX = 55.0f;
@@ -137,33 +138,13 @@ void SimulationStats::drawStatsText()
 
     unsigned int size = 18;
 
-    drawText(
-        "Humans Alive: " + std::to_string(Human::countAlive()),
-        leftX,
-        topY,
-        size
-    );
+    drawText("Humans Alive: " + std::to_string(Human::countAlive()), leftX, topY, size);
 
-    drawText(
-        "Humans Dead: " + std::to_string(Human::countDead()),
-        leftX,
-        topY + spacing,
-        size
-    );
+    drawText("Humans Dead: " + std::to_string(Human::countDead()), leftX, topY + spacing, size);
 
-    drawText(
-        "Predators Alive: " + std::to_string(Predator::countAlive()),
-        leftX,
-        topY + spacing * 2.0f,
-        size
-    );
+    drawText("Predators Alive: " + std::to_string(Predator::countAlive()), leftX, topY + spacing * 2.0f, size);
 
-    drawText(
-        "Predators Dead: " + std::to_string(Predator::countDead()),
-        leftX,
-        topY + spacing * 3.0f,
-        size
-    );
+    drawText("Predators Dead: " + std::to_string(Predator::countDead()), leftX, topY + spacing * 3.0f, size);
 
     std::string dayNight = "Day";
 
@@ -172,28 +153,16 @@ void SimulationStats::drawStatsText()
         dayNight = "Night";
     }
 
-    drawText(
-        "Day / Night: " + dayNight,
-        rightX,
-        topY,
-        size
-    );
+    drawText("Day / Night: " + dayNight, rightX, topY, size);
 
-    drawText(
-        "Water Blocks: " + std::to_string(Lake::getTotalWaterBlocks()),
-        rightX,
-        topY + spacing,
-        size
-    );
+    drawText("Water Blocks: " + std::to_string(Lake::getTotalWaterBlocks()), rightX, topY + spacing, size);
 
-    drawText(
-        "Crop Blocks: " + std::to_string(Crop::getCount()),
-        rightX,
-        topY + spacing * 2.0f,
-        size
-    );
+    drawText("Crop Blocks: " + std::to_string(Crop::getCount()), rightX, topY + spacing * 2.0f, size);
 }
 
+/*
+    Draws the flood and drought alert boxes.
+*/
 void SimulationStats::drawWeatherBoxes()
 {
     float boxWidth = 110.0f;
@@ -203,33 +172,16 @@ void SimulationStats::drawWeatherBoxes()
     float rightX = 315.0f;
     float y = 280.0f;
 
-    drawWeatherBox(
-        leftX,
-        y,
-        boxWidth,
-        boxHeight,
-        "Flood",
-        Weather::isFloodAlertActive()
-    );
+    drawWeatherBox(leftX, y, boxWidth, boxHeight, "Flood", Weather::isFloodAlertActive());
 
-    drawWeatherBox(
-        rightX,
-        y,
-        boxWidth,
-        boxHeight,
-        "Drought",
-        Weather::isDroughtAlertActive()
-    );
+    drawWeatherBox(rightX, y, boxWidth, boxHeight, "Drought", Weather::isDroughtAlertActive());
 }
 
-void SimulationStats::drawWeatherBox(
-    float x,
-    float y,
-    float width,
-    float height,
-    const std::string& title,
-    bool active
-)
+/*
+    Draws one weather alert box.
+    If the icon failed to load, it falls back to text inside the box.
+*/
+void SimulationStats::drawWeatherBox(float x, float y, float width, float height, const std::string& title, bool active)
 {
     sf::RectangleShape box;
     box.setSize(sf::Vector2f(width, height));
@@ -286,40 +238,26 @@ void SimulationStats::drawWeatherBox(
 
     sf::FloatRect scaledBounds = icon.getGlobalBounds();
 
-    icon.setPosition(
-        x + (width - scaledBounds.width) / 2.0f,
-        y + (height - scaledBounds.height) / 2.0f
-    );
+    // Centers the scaled icon inside the weather box.
+    icon.setPosition(x + (width - scaledBounds.width) / 2.0f, y + (height - scaledBounds.height) / 2.0f);
 
     window.draw(icon);
 
     drawCenteredText(title, x + width / 2.0f, y + height + 24.0f, 20);
 }
 
-void SimulationStats::drawText(
-    const std::string& text,
-    float x,
-    float y,
-    unsigned int size
-)
+/*
+    Draws left-aligned text using the shared UI text helper.
+*/
+void SimulationStats::drawText(const std::string& text, float x, float y, unsigned int size)
 {
     UiDrawHelper::drawText(window, font, fontLoaded, text, x, y, size);
 }
 
-void SimulationStats::drawCenteredText(
-    const std::string& text,
-    float centerX,
-    float y,
-    unsigned int size
-)
+/*
+    Draws centered text using the shared UI text helper.
+*/
+void SimulationStats::drawCenteredText(const std::string& text, float centerX, float y, unsigned int size)
 {
-    UiDrawHelper::drawCenteredText(
-        window,
-        font,
-        fontLoaded,
-        text,
-        centerX,
-        y,
-        size
-    );
+    UiDrawHelper::drawCenteredText(window, font, fontLoaded, text, centerX, y, size);
 }

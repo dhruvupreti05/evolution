@@ -3,6 +3,9 @@
 #include "core/config.h"
 #include "environment/daynight.h"
 
+/*
+    Returns the base daytime color for a tile type.
+*/
 sf::Color TileColors::get(TileType tile)
 {
     switch (tile)
@@ -31,6 +34,9 @@ sf::Color TileColors::get(TileType tile)
     }
 }
 
+/*
+    Returns the tile color after applying the current day/night brightness.
+*/
 sf::Color TileColors::getDayNight(TileType tile)
 {
     return DayNight::apply(get(tile));

@@ -10,6 +10,10 @@
 
 class Brain;
 
+/*
+    Base class for living things in the simulation.
+    It stores shared survival stats, position, brain behavior, prepared actions, mating cooldowns, and child tracking.
+*/
 class Entity
 {
 public:
@@ -67,6 +71,7 @@ protected:
     int x;
     int y;
 
+    // Prevents the same entity from mating again immediately.
     int matingCooldownTicksRemaining = 0;
 
     int health;
@@ -78,11 +83,14 @@ protected:
 
     bool dead = false;
 
+    // Owns the decision-making object used by this entity.
     std::unique_ptr<Brain> brain;
 
+    // Stores the action chosen for this tick before it is actually executed.
     Action preparedAction = Action::stay();
     bool preparedActionReady = false;
 
+    // Stores child IDs so family/lineage information can be inspected later.
     std::vector<int> children;
 
     void executeAction(const Action& action, GameWorld& world);
