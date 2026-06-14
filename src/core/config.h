@@ -46,10 +46,26 @@ namespace Config
     constexpr int HUMAN_START_THIRST_BUFFER = 250;
     constexpr int HUMAN_START_HUNGER_BUFFER = 250;
 
-    constexpr int HUMAN_HEALTH_DECAY = 0;
+    constexpr int HUMAN_MAX_HEALTH = HUMAN_START_HEALTH + HUMAN_START_HEALTH_BUFFER;
+    constexpr int HUMAN_MAX_THIRST = HUMAN_START_THIRST + HUMAN_START_THIRST_BUFFER;
+    constexpr int HUMAN_MAX_HUNGER = HUMAN_START_HUNGER + HUMAN_START_HUNGER_BUFFER;
+
     constexpr int HUMAN_THIRST_DECAY = 2;
     constexpr int HUMAN_HUNGER_DECAY = 1;
     constexpr int HUMAN_AGE_INCREASE = 1;
+
+    constexpr int HUMAN_HEALTH_UPDATE_INTERVAL = 10;
+
+    constexpr int HUMAN_SAFE_HUNGER = 700;
+    constexpr int HUMAN_SAFE_THIRST = 700;
+
+    constexpr int HUMAN_HEALING_HUNGER = 850;
+    constexpr int HUMAN_HEALING_THIRST = 850;
+    constexpr int HUMAN_HEALTH_RECOVERY = 3;
+
+    constexpr int HUMAN_HUNGER_DAMAGE_DIVISOR = 100;
+    constexpr int HUMAN_THIRST_DAMAGE_DIVISOR = 70;
+    constexpr int HUMAN_AGE_DAMAGE_DIVISOR = 4000;
 
     constexpr int HUMAN_VISION_RANGE = 15;
     constexpr int HUMAN_INVENTORY_SIZE = 5;
@@ -86,9 +102,21 @@ namespace Config
     constexpr int PREDATOR_START_THIRST = 1000;
     constexpr int PREDATOR_START_HUNGER = 1000;
 
-    constexpr int PREDATOR_HEALTH_DECAY = 0;
+    constexpr int PREDATOR_MAX_HEALTH = 1000;
+    constexpr int PREDATOR_MAX_THIRST = 1000;
+    constexpr int PREDATOR_MAX_HUNGER = 1000;
+
     constexpr int PREDATOR_THIRST_DECAY = 2;
     constexpr int PREDATOR_HUNGER_DECAY = 2;
+
+    constexpr int PREDATOR_HEALTH_UPDATE_INTERVAL = 10;
+    constexpr int PREDATOR_SAFE_HUNGER = 700;
+    constexpr int PREDATOR_SAFE_THIRST = 700;
+    constexpr int PREDATOR_HEALING_HUNGER = 850;
+    constexpr int PREDATOR_HEALING_THIRST = 850;
+    constexpr int PREDATOR_HEALTH_RECOVERY = 2;
+    constexpr int PREDATOR_HUNGER_DAMAGE_DIVISOR = 90;
+    constexpr int PREDATOR_THIRST_DAMAGE_DIVISOR = 70;
 
     constexpr int PREDATOR_THIRST_MODE_THRESHOLD = 500;
 

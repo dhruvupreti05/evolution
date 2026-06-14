@@ -14,6 +14,7 @@
 #include <set>
 #include <utility>
 #include <cmath>
+#include <algorithm>
 
 std::vector<Human> Human::humans;
 int Human::nextId = 0;
@@ -123,34 +124,55 @@ void Human::eatBodyOneTick()
 }
 
 /*
-    Lowers survival stats and increases age each tick.
+    Updates hunger, thirst, age, and the health effects caused by them.
+    Hunger and thirst no longer kill directly; they only push health up or down.
 */
 void Human::decayStats()
 {
-    health -= Config::HUMAN_HEALTH_DECAY;
     thirst -= Config::HUMAN_THIRST_DECAY;
     hunger -= Config::HUMAN_HUNGER_DECAY;
     age += Config::HUMAN_AGE_INCREASE;
 
-    if (health < 0)
-    {
-        health = 0;
-    }
+    thirst = std::max(0, thirst);
+    hunger = std::max(0, hunger);
 
-    if (thirst < 0)
-    {
-        thirst = 0;
-    }
-
-    if (hunger < 0)
-    {
-        hunger = 0;
-    }
+    updateHealthFromNeedsAndAge();
 }
 
 /*
-    Marks the human as dead if any survival stat reaches zero.
-    Death also resets the body food timer so predators can eat it.
+    Applies the combined health effect of hunger, thirst, and age.
+    Integer divisors keep the curve smooth enough without adding fractional state.
+*/
+void Human::updateHealthFromNeedsAndAge()
+{
+    if (Config::HUMAN_HEALTH_UPDATE_INTERVAL <= 0)
+    {
+        return;
+    }
+
+    if (age % Config::HUMAN_HEALTH_UPDATE_INTERVAL != 0)
+    {
+        return;
+    }
+
+    int hungerDamage = std::max(0, Config::HUMAN_SAFE_HUNGER - hunger) / Config::HUMAN_HUNGER_DAMAGE_DIVISOR;
+    int thirstDamage = std::max(0, Config::HUMAN_SAFE_THIRST - thirst) / Config::HUMAN_THIRST_DAMAGE_DIVISOR;
+    int ageDamage = (age + Config::HUMAN_AGE_DAMAGE_DIVISOR - 1) / Config::HUMAN_AGE_DAMAGE_DIVISOR;
+
+    int healing = 0;
+
+    if (hunger >= Config::HUMAN_HEALING_HUNGER && thirst >= Config::HUMAN_HEALING_THIRST)
+    {
+        healing = Config::HUMAN_HEALTH_RECOVERY;
+    }
+
+    health += healing - hungerDamage - thirstDamage - ageDamage;
+    health = std::max(0, std::min(Config::HUMAN_MAX_HEALTH, health));
+}
+
+/*
+    Marks the human as dead only when health reaches zero.
+    Hunger and thirst can cause health loss, but they are not death conditions anymore.
 */
 void Human::checkDeath()
 {
@@ -159,7 +181,7 @@ void Human::checkDeath()
         return;
     }
 
-    if (health <= 0 || thirst <= 0 || hunger <= 0)
+    if (health <= 0)
     {
         dead = true;
         deadBodyTicksRemaining = Config::TICKS_PER_DEAD_BODY;
@@ -1302,7 +1324,7 @@ bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    increaseHunger(hungerGain, Config::HUMAN_START_HUNGER);
+    increaseHunger(hungerGain, Config::HUMAN_MAX_HUNGER);
     return true;
 }
 
@@ -1321,7 +1343,7 @@ bool Human::tryDrinkAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    increaseThirst(Config::HUMAN_THIRST_PER_TICK_WATER, Config::HUMAN_START_THIRST);
+    increaseThirst(Config::HUMAN_THIRST_PER_TICK_WATER, Config::HUMAN_MAX_THIRST);
 
     return true;
 }

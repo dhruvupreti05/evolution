@@ -2,6 +2,7 @@
 #include "core/config.h"
 #include "core/gridutils.h"
 #include "environment/lake.h"
+#include "environment/daynight.h"
 #include "brain/predator-smart-brain.h"
 #include "entities/action.h"
 #include "core/debuglog.h"
@@ -12,6 +13,7 @@
 #include <memory>
 #include <cmath>
 #include <set>
+#include <algorithm>
 
 std::vector<Predator> Predator::predators;
 int Predator::nextId = 0;
@@ -474,32 +476,51 @@ void Predator::drawBodies(GameWorld& world)
 }
 
 /*
-    Lowers predator survival stats each tick.
+    Updates hunger and thirst, then applies their effect to health.
+    Hunger and thirst no longer kill directly.
 */
 void Predator::decayStats()
 {
-    health -= Config::PREDATOR_HEALTH_DECAY;
     thirst -= Config::PREDATOR_THIRST_DECAY;
     hunger -= Config::PREDATOR_HUNGER_DECAY;
 
-    if (health < 0)
-    {
-        health = 0;
-    }
+    thirst = std::max(0, thirst);
+    hunger = std::max(0, hunger);
 
-    if (thirst < 0)
-    {
-        thirst = 0;
-    }
-
-    if (hunger < 0)
-    {
-        hunger = 0;
-    }
+    updateHealthFromNeeds();
 }
 
 /*
-    Marks the predator as dead if any survival stat reaches zero.
+    Applies health loss or recovery from the predator's current hunger and thirst.
+*/
+void Predator::updateHealthFromNeeds()
+{
+    if (Config::PREDATOR_HEALTH_UPDATE_INTERVAL <= 0)
+    {
+        return;
+    }
+
+    if (DayNight::getTick() % Config::PREDATOR_HEALTH_UPDATE_INTERVAL != 0)
+    {
+        return;
+    }
+
+    int hungerDamage = std::max(0, Config::PREDATOR_SAFE_HUNGER - hunger) / Config::PREDATOR_HUNGER_DAMAGE_DIVISOR;
+    int thirstDamage = std::max(0, Config::PREDATOR_SAFE_THIRST - thirst) / Config::PREDATOR_THIRST_DAMAGE_DIVISOR;
+
+    int healing = 0;
+
+    if (hunger >= Config::PREDATOR_HEALING_HUNGER && thirst >= Config::PREDATOR_HEALING_THIRST)
+    {
+        healing = Config::PREDATOR_HEALTH_RECOVERY;
+    }
+
+    health += healing - hungerDamage - thirstDamage;
+    health = std::max(0, std::min(Config::PREDATOR_MAX_HEALTH, health));
+}
+
+/*
+    Marks the predator as dead only when health reaches zero.
 */
 void Predator::checkDeath()
 {
@@ -508,7 +529,7 @@ void Predator::checkDeath()
         return;
     }
 
-    if (health <= 0 || thirst <= 0 || hunger <= 0)
+    if (health <= 0)
     {
         dead = true;
         deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
@@ -650,8 +671,8 @@ int Predator::countDead()
 }
 
 /*
-    Kills water predators that are no longer on water.
-    This matters after droughts or other terrain changes.
+    Removes health from water predators that are no longer standing on water.
+    Death still goes through health reaching zero.
 */
 void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
 {
@@ -667,17 +688,12 @@ void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
             continue;
         }
 
-        if (!world.isInsideGrid(predator.x, predator.y))
-        {
-            predator.dead = true;
-            predator.deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
-            continue;
-        }
+        bool missingWater = !world.isInsideGrid(predator.x, predator.y) || world.getTile(predator.x, predator.y) != TileType::Water;
 
-        if (world.getTile(predator.x, predator.y) != TileType::Water)
+        if (missingWater)
         {
-            predator.dead = true;
-            predator.deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
+            predator.health = 0;
+            predator.checkDeath();
         }
     }
 }
@@ -772,7 +788,7 @@ bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 
     body->eatBodyOneTick();
 
-    increaseHunger(Config::HUNGER_PER_TICK_MEAL_HUMAN, Config::PREDATOR_START_HUNGER);
+    increaseHunger(Config::HUNGER_PER_TICK_MEAL_HUMAN, Config::PREDATOR_MAX_HUNGER);
 
     return true;
 }
@@ -792,7 +808,7 @@ bool Predator::tryDrinkAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    increaseThirst(Config::PREDATOR_THIRST_PER_TICK_WATER, Config::PREDATOR_START_THIRST);
+    increaseThirst(Config::PREDATOR_THIRST_PER_TICK_WATER, Config::PREDATOR_MAX_THIRST);
 
     return true;
 }

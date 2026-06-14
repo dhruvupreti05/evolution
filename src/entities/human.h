@@ -174,6 +174,7 @@ private:
 
     void decayStats() override;
     void checkDeath() override;
+    void updateHealthFromNeedsAndAge();
 
     static bool findChildSpawnCell(GameWorld& world, const Human& parentA, const Human& parentB, int& childX, int& childY);
 

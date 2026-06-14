@@ -18,7 +18,7 @@ enum class PredatorType
 
 /*
     Predator entity in the simulation.
-    Predators can move, hunt humans, eat dead bodies, drink, mate, and die if their survival stats run out.
+    Predators can move, hunt humans, eat dead bodies, drink, mate, and die when health reaches zero.
 */
 class Predator : public Entity
 {
@@ -75,6 +75,7 @@ private:
 
     void decayStats() override;
     void checkDeath() override;
+    void updateHealthFromNeeds();
 
     bool isLandPredator() const;
     bool isWaterPredator() const;
