@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
 #include "core/config.h"
 #include "core/gameworld.h"
@@ -21,6 +22,8 @@ int main()
 
     while (world.isOpen())
     {
+        sf::Clock tickClock;
+
         sf::Event event;
 
         while (world.pollEvent(event))
@@ -31,8 +34,16 @@ int main()
         simulation.update(world);
         simulation.draw(world);
 
-        // Keeps the simulation from running as fast as the CPU allows.
-        sf::sleep(sf::milliseconds(Config::TICK_MS));
+        sf::Time elapsed = tickClock.getElapsedTime();
+        sf::Time targetTickTime = sf::milliseconds(Config::TICK_MS);
+
+        // Sleeps only for the remaining time, so slow update/draw work is not added on top of TICK_MS.
+        if (elapsed < targetTickTime)
+        {
+            sf::sleep(targetTickTime - elapsed);
+        }
+
+        std::cout << "Tick work time: " << elapsed.asMilliseconds() << " ms" << std::endl;
     }
 
     return 0;

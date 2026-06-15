@@ -16,7 +16,7 @@ namespace Config
     constexpr int GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
     // Simulation settings
-    constexpr int NUM_PLAYERS = 10;
+    constexpr int NUM_PLAYERS = 150;
     constexpr int NUM_LAKES = 10;
     constexpr int NUM_FORESTS = 15;
 
@@ -79,8 +79,8 @@ namespace Config
     constexpr int HUMAN_THIRST_DAMAGE_DIVISOR = 70;
     constexpr int HUMAN_AGE_DAMAGE_DIVISOR = 4000;
 
-    constexpr int HUMAN_VISION_RANGE = 15;
-    constexpr VisionShape HUMAN_VISION_SHAPE = VisionShape::ForwardTriangle;
+    constexpr int HUMAN_VISION_RANGE = 8;
+    constexpr VisionShape HUMAN_VISION_SHAPE = VisionShape::Circle;
 
     constexpr int HUMAN_INVENTORY_SIZE = 5;
 
@@ -109,8 +109,8 @@ namespace Config
     constexpr int PREDATOR_WATER_SEARCH_RANGE = 20;
     constexpr int PREDATOR_PREY_SEARCH_RANGE = 25;
 
-    constexpr int NUMBER_OF_LAND_PREDATORS = 5;
-    constexpr int NUMBER_OF_WATER_PREDATORS = 10;
+    constexpr int NUMBER_OF_LAND_PREDATORS = 15;
+    constexpr int NUMBER_OF_WATER_PREDATORS = NUMBER_OF_LAND_PREDATORS;
 
     constexpr int PREDATOR_START_HEALTH = 1000;
     constexpr int PREDATOR_START_THIRST = 1000;
