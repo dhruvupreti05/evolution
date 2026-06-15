@@ -2,6 +2,8 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "entities/visionshape.h"
+
 namespace Config
 {
     // Window settings
@@ -54,11 +56,14 @@ namespace Config
     constexpr int HUMAN_HUNGER_DECAY = 1;
     constexpr int HUMAN_AGE_INCREASE = 1;
 
+    // Hunger, thirst, and age change health only on these slower health ticks.
     constexpr int HUMAN_HEALTH_UPDATE_INTERVAL = 10;
 
+    // Values above the safe line do not hurt health. Values below it create damage.
     constexpr int HUMAN_SAFE_HUNGER = 700;
     constexpr int HUMAN_SAFE_THIRST = 700;
 
+    // Excellent food and water can restore health, but age can eventually overpower it.
     constexpr int HUMAN_HEALING_HUNGER = 850;
     constexpr int HUMAN_HEALING_THIRST = 850;
     constexpr int HUMAN_HEALTH_RECOVERY = 3;
@@ -67,7 +72,9 @@ namespace Config
     constexpr int HUMAN_THIRST_DAMAGE_DIVISOR = 70;
     constexpr int HUMAN_AGE_DAMAGE_DIVISOR = 4000;
 
-    constexpr int HUMAN_VISION_RANGE = 15;
+    constexpr int HUMAN_VISION_RANGE = 8;
+    constexpr VisionShape HUMAN_VISION_SHAPE = VisionShape::ForwardTriangle;
+
     constexpr int HUMAN_INVENTORY_SIZE = 5;
 
     // Inspector window settings

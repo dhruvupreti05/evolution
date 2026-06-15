@@ -39,6 +39,112 @@ namespace
                 break;
         }
     }
+
+    /*
+        Same shape test as Human uses, but kept here so the inspector can draw the full background shape.
+    */
+    bool isInspectorVisionCell(int dx, int dy, Orientation orientation)
+    {
+        if (dx == 0 && dy == 0)
+        {
+            return false;
+        }
+
+        int range = Config::HUMAN_VISION_RANGE;
+
+        switch (Config::HUMAN_VISION_SHAPE)
+        {
+            case VisionShape::Circle:
+            {
+                int scaledDx = dx * 2;
+                int scaledDy = dy * 2;
+                int scaledRadius = range * 2 + 1;
+
+                return scaledDx * scaledDx + scaledDy * scaledDy <= scaledRadius * scaledRadius;
+            }
+
+            case VisionShape::Square:
+                return std::abs(dx) <= range && std::abs(dy) <= range;
+
+            case VisionShape::Diamond:
+                return std::abs(dx) + std::abs(dy) <= range;
+
+            case VisionShape::ForwardTriangle:
+            default:
+            {
+                int forward = 0;
+                int side = 0;
+
+                switch (orientation)
+                {
+                    case Orientation::North:
+                        forward = -dy;
+                        side = dx;
+                        break;
+
+                    case Orientation::South:
+                        forward = dy;
+                        side = -dx;
+                        break;
+
+                    case Orientation::East:
+                        forward = dx;
+                        side = dy;
+                        break;
+
+                    case Orientation::West:
+                        forward = -dx;
+                        side = -dy;
+                        break;
+                }
+
+                if (forward < 1 || forward > range)
+                {
+                    return false;
+                }
+
+                return std::abs(side) <= forward - 1;
+            }
+        }
+    }
+
+    /*
+        Converts a world-relative visible offset into inspector tile coordinates.
+        The triangle is shown as a forward-facing point-of-view; centered shapes use raw dx/dy.
+    */
+    void getInspectorOffset(int dx, int dy, Orientation orientation, int& viewX, int& viewY)
+    {
+        if (Config::HUMAN_VISION_SHAPE != VisionShape::ForwardTriangle)
+        {
+            viewX = dx;
+            viewY = dy;
+            return;
+        }
+
+        switch (orientation)
+        {
+            case Orientation::North:
+                viewX = dx;
+                viewY = dy;
+                break;
+
+            case Orientation::South:
+                viewX = -dx;
+                viewY = -dy;
+                break;
+
+            case Orientation::East:
+                viewX = dy;
+                viewY = -dx;
+                break;
+
+            case Orientation::West:
+                viewX = -dy;
+                viewY = dx;
+                break;
+        }
+    }
+
 }
 
 /*
@@ -526,8 +632,8 @@ void HumanInspector::drawPanelBackground()
 }
 
 /*
-    Draws the selected human's vision from their point of view.
-    Empty visible tiles are drawn first, then actual visible objects are drawn on top.
+    Draws the selected human's configured vision shape.
+    Background cells show the full possible shape, then real visible tiles/entities draw on top.
 */
 void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 {
@@ -536,9 +642,10 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
     const float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
     const float humanDrawX = std::round(centerX - tileSize / 2.0f);
-    const float humanDrawY = 250.0f;
+    const float humanDrawY = (Config::HUMAN_VISION_SHAPE == VisionShape::ForwardTriangle) ? 250.0f : 160.0f;
 
-    drawCenteredText("Human View", centerX, 55.0f, 22);
+    
+    drawCenteredText("Human View", centerX, 40.0f, 22);
 
     std::vector<VisibleTile> visibleTiles = human.getVisibleTiles(world);
 
@@ -558,14 +665,24 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
         window.draw(square);
     };
 
-    for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
-    {
-        int sideLimit = forward - 1;
+    int range = Config::HUMAN_VISION_RANGE;
 
-        for (int side = -sideLimit; side <= sideLimit; ++side)
+    for (int dy = -range; dy <= range; ++dy)
+    {
+        for (int dx = -range; dx <= range; ++dx)
         {
-            float drawX = humanDrawX + side * tileSize;
-            float drawY = humanDrawY - forward * tileSize;
+            if (!isInspectorVisionCell(dx, dy, human.getOrientation()))
+            {
+                continue;
+            }
+
+            int viewX;
+            int viewY;
+
+            getInspectorOffset(dx, dy, human.getOrientation(), viewX, viewY);
+
+            float drawX = humanDrawX + viewX * tileSize;
+            float drawY = humanDrawY + viewY * tileSize;
 
             drawTile(drawX, drawY, Config::COLOR_BACKGROUND, sf::Color(215, 215, 215), 1.0f);
         }
@@ -573,8 +690,13 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
 
     for (const auto& tile : visibleTiles)
     {
-        float drawX = humanDrawX + tile.side * tileSize;
-        float drawY = humanDrawY - tile.forward * tileSize;
+        int viewX;
+        int viewY;
+
+        getInspectorOffset(tile.dx, tile.dy, human.getOrientation(), viewX, viewY);
+
+        float drawX = humanDrawX + viewX * tileSize;
+        float drawY = humanDrawY + viewY * tileSize;
 
         drawTile(drawX, drawY, getColorFromTile(tile.tile), sf::Color::Black, 1.0f);
     }

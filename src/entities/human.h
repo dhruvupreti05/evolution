@@ -8,6 +8,7 @@
 #include "entities/entity.h"
 #include "entities/food.h"
 #include "entities/direction.h"
+#include "entities/visionshape.h"
 
 /*
     Direction the human is facing.
@@ -42,15 +43,15 @@ struct MoveAttempt
 };
 
 /*
-    Stores one tile visible from the human's point of view.
-    forward and side are relative to the human, while worldX and worldY are actual grid coordinates.
+    Stores one tile or entity visible to a human.
+    dx and dy are world-relative offsets from the human, while worldX and worldY are actual grid coordinates.
 */
 struct VisibleTile
 {
     TileType tile = TileType::Empty;
 
-    int forward = 0;
-    int side = 0;
+    int dx = 0;
+    int dy = 0;
 
     int worldX = 0;
     int worldY = 0;
@@ -188,6 +189,9 @@ private:
     void orientationToBasis(int& forwardDx, int& forwardDy, int& rightDx, int& rightDy) const;
 
     void drawVisionOutline(GameWorld& world) const;
+
+    bool isRelativeVisionCell(int dx, int dy) const;
+    void addVisibleTileIfSeen(const GameWorld& world, std::vector<VisibleTile>& visibleTiles, int dx, int dy) const;
 
     // Keeps vision logs from printing every boring tile.
     bool shouldLogVisibleTile(TileType tile) const;

@@ -456,6 +456,88 @@ void Human::orientationToBasis(int& forwardDx, int& forwardDy, int& rightDx, int
 }
 
 /*
+    Checks whether a world-relative offset is inside the current human vision shape.
+    The forward triangle is rotated by orientation; centered shapes ignore orientation.
+*/
+bool Human::isRelativeVisionCell(int dx, int dy) const
+{
+    if (dx == 0 && dy == 0)
+    {
+        return false;
+    }
+
+    int range = Config::HUMAN_VISION_RANGE;
+
+    switch (Config::HUMAN_VISION_SHAPE)
+    {
+        case VisionShape::Circle:
+        {
+            int scaledDx = dx * 2;
+            int scaledDy = dy * 2;
+            int scaledRadius = range * 2 + 1;
+
+            return scaledDx * scaledDx + scaledDy * scaledDy <= scaledRadius * scaledRadius;
+        }
+
+        case VisionShape::Square:
+            return std::abs(dx) <= range && std::abs(dy) <= range;
+
+        case VisionShape::Diamond:
+            return std::abs(dx) + std::abs(dy) <= range;
+
+        case VisionShape::ForwardTriangle:
+        default:
+        {
+            int forwardDx;
+            int forwardDy;
+            int rightDx;
+            int rightDy;
+
+            orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
+
+            int forward = dx * forwardDx + dy * forwardDy;
+            int side = dx * rightDx + dy * rightDy;
+
+            if (forward < 1 || forward > range)
+            {
+                return false;
+            }
+
+            return std::abs(side) <= forward - 1;
+        }
+    }
+}
+
+/*
+    Adds a terrain tile to the visible list when the offset is visible and inside the world.
+    Empty and sand tiles are skipped so the vision list stays focused on useful information.
+*/
+void Human::addVisibleTileIfSeen(const GameWorld& world, std::vector<VisibleTile>& visibleTiles, int dx, int dy) const
+{
+    if (!isRelativeVisionCell(dx, dy))
+    {
+        return;
+    }
+
+    int worldX = x + dx;
+    int worldY = y + dy;
+
+    if (!world.isInsideGrid(worldX, worldY))
+    {
+        return;
+    }
+
+    TileType tile = world.getTile(worldX, worldY);
+
+    if (!shouldLogVisibleTile(tile))
+    {
+        return;
+    }
+
+    visibleTiles.push_back({tile, dx, dy, worldX, worldY});
+}
+
+/*
     Filters out boring visible tiles from the inspector list.
 */
 bool Human::shouldLogVisibleTile(TileType tile) const
@@ -464,8 +546,8 @@ bool Human::shouldLogVisibleTile(TileType tile) const
 }
 
 /*
-    Builds the list of tiles and entities visible in front of the human.
-    Vision widens with distance, making a triangular view shape.
+    Builds the list of visible terrain, humans, and predators for the configured human vision shape.
+    Only the forward triangle uses orientation; circle, square, and diamond are centered on the human.
 */
 std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
 {
@@ -476,35 +558,13 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
         return visibleTiles;
     }
 
-    int forwardDx;
-    int forwardDy;
-    int rightDx;
-    int rightDy;
+    int range = Config::HUMAN_VISION_RANGE;
 
-    orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
-
-    for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
+    for (int dy = -range; dy <= range; ++dy)
     {
-        int sideLimit = forward - 1;
-
-        for (int side = -sideLimit; side <= sideLimit; ++side)
+        for (int dx = -range; dx <= range; ++dx)
         {
-            int worldX = x + forward * forwardDx + side * rightDx;
-            int worldY = y + forward * forwardDy + side * rightDy;
-
-            if (!world.isInsideGrid(worldX, worldY))
-            {
-                continue;
-            }
-
-            TileType tile = world.getTile(worldX, worldY);
-
-            if (!shouldLogVisibleTile(tile))
-            {
-                continue;
-            }
-
-            visibleTiles.push_back({tile, forward, side, worldX, worldY});
+            addVisibleTileIfSeen(world, visibleTiles, dx, dy);
         }
     }
 
@@ -523,22 +583,10 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
         int dx = otherHuman.getX() - x;
         int dy = otherHuman.getY() - y;
 
-        int forward = dx * forwardDx + dy * forwardDy;
-        int side = dx * rightDx + dy * rightDy;
-
-        if (forward < 1 || forward > Config::HUMAN_VISION_RANGE)
+        if (isRelativeVisionCell(dx, dy))
         {
-            continue;
+            visibleTiles.push_back({TileType::Human, dx, dy, otherHuman.getX(), otherHuman.getY()});
         }
-
-        int sideLimit = forward - 1;
-
-        if (side < -sideLimit || side > sideLimit)
-        {
-            continue;
-        }
-
-        visibleTiles.push_back({TileType::Human, forward, side, otherHuman.getX(), otherHuman.getY()});
     }
 
     for (const auto& predator : Predator::getPredators())
@@ -551,22 +599,10 @@ std::vector<VisibleTile> Human::getVisibleTiles(const GameWorld& world) const
         int dx = predator.getX() - x;
         int dy = predator.getY() - y;
 
-        int forward = dx * forwardDx + dy * forwardDy;
-        int side = dx * rightDx + dy * rightDy;
-
-        if (forward < 1 || forward > Config::HUMAN_VISION_RANGE)
+        if (isRelativeVisionCell(dx, dy))
         {
-            continue;
+            visibleTiles.push_back({TileType::Predator, dx, dy, predator.getX(), predator.getY()});
         }
-
-        int sideLimit = forward - 1;
-
-        if (side < -sideLimit || side > sideLimit)
-        {
-            continue;
-        }
-
-        visibleTiles.push_back({TileType::Predator, forward, side, predator.getX(), predator.getY()});
     }
 
     return visibleTiles;
@@ -853,7 +889,7 @@ int Human::getInspectedHumanId()
 
 /*
     Draws an outline around the inspected human's visible area.
-    Only outer edges are drawn so the vision shape looks like one connected region.
+    Only outer edges are drawn so the selected vision shape looks like one connected region.
 */
 void Human::drawVisionOutline(GameWorld& world) const
 {
@@ -862,23 +898,21 @@ void Human::drawVisionOutline(GameWorld& world) const
         return;
     }
 
-    int forwardDx;
-    int forwardDy;
-    int rightDx;
-    int rightDy;
-
-    orientationToBasis(forwardDx, forwardDy, rightDx, rightDy);
-
     std::set<std::pair<int, int>> visionCells;
 
-    for (int forward = 1; forward <= Config::HUMAN_VISION_RANGE; ++forward)
-    {
-        int sideLimit = forward - 1;
+    int range = Config::HUMAN_VISION_RANGE;
 
-        for (int side = -sideLimit; side <= sideLimit; ++side)
+    for (int dy = -range; dy <= range; ++dy)
+    {
+        for (int dx = -range; dx <= range; ++dx)
         {
-            int worldX = x + forward * forwardDx + side * rightDx;
-            int worldY = y + forward * forwardDy + side * rightDy;
+            if (!isRelativeVisionCell(dx, dy))
+            {
+                continue;
+            }
+
+            int worldX = x + dx;
+            int worldY = y + dy;
 
             if (!world.isInsideGrid(worldX, worldY))
             {
