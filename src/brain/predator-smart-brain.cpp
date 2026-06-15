@@ -102,7 +102,7 @@ Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
         return Action::attack(livingHuman->getX(), livingHuman->getY());
     }
 
-    Human* target = Human::getNearestLivingHumanOrBodyWithinRange(entity.getX(), entity.getY(), Config::PREDATOR_PREY_SEARCH_RANGE);
+    Human* target = Human::getNearestLivingHumanOrBodyWithinRange(world, entity.getX(), entity.getY(), Config::PREDATOR_PREY_SEARCH_RANGE);
 
     if (target == nullptr)
     {

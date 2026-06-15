@@ -3,6 +3,7 @@
 #include "core/gridutils.h"
 #include "core/config.h"
 #include "environment/lake.h"
+#include "environment/forest.h"
 #include "entities/crop.h"
 #include "entities/predator.h"
 #include "brain/manual-brain.h"
@@ -1636,9 +1637,18 @@ Human* Human::getById(int id)
 }
 
 /*
-    Finds the nearest living human or edible body within a limited range.
+    Returns whether a human or body on this tile is hidden from predator search.
 */
-Human* Human::getNearestLivingHumanOrBodyWithinRange(int x, int y, int range)
+bool Human::isHiddenFromPredators(const GameWorld& world, int x, int y)
+{
+    return Forest::isForestTile(world, x, y);
+}
+
+/*
+    Finds the nearest living human or edible body within a limited range.
+    Forest targets are ignored unless the predator has already stumbled next to them.
+*/
+Human* Human::getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int x, int y, int range)
 {
     if (range <= 0)
     {
@@ -1678,6 +1688,11 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(int x, int y, int range)
                     continue;
                 }
 
+                if (isHiddenFromPredators(world, human->getX(), human->getY()) && !GridUtils::isFourNeighborDistance(x, y, human->getX(), human->getY()))
+                {
+                    continue;
+                }
+
                 bestHuman = human;
                 bestDistance = distance;
             }
@@ -1693,6 +1708,11 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(int x, int y, int range)
             }
 
             int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
+
+            if (isHiddenFromPredators(world, human.x, human.y) && !GridUtils::isFourNeighborDistance(x, y, human.x, human.y))
+            {
+                continue;
+            }
 
             if (distance <= range && distance < bestDistance)
             {
@@ -1715,6 +1735,11 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(int x, int y, int range)
         }
 
         int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
+
+        if (isHiddenFromPredators(world, human.x, human.y) && !GridUtils::isFourNeighborDistance(x, y, human.x, human.y))
+        {
+            continue;
+        }
 
         if (distance <= range && distance < bestDistance)
         {

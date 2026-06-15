@@ -18,6 +18,7 @@ namespace Config
     // Simulation settings
     constexpr int NUM_PLAYERS = 10;
     constexpr int NUM_LAKES = 10;
+    constexpr int NUM_FORESTS = 15;
 
     // Time settings
     constexpr int TICK_MS = 250;
@@ -27,12 +28,18 @@ namespace Config
     constexpr int LAKE_BLOCK_RANGE = 50;
     constexpr int LAKE_SPAWN_BOUNDARY_BUFFER = 10;
 
+    // Forest settings
+    constexpr int MIN_FOREST_BLOCKS = 100;
+    constexpr int FOREST_BLOCK_RANGE = 50;
+    constexpr int FOREST_SPAWN_BOUNDARY_BUFFER = 10;
+
     // Colors
     const sf::Color COLOR_BACKGROUND = sf::Color(235, 220, 180);
     const sf::Color COLOR_WATER = sf::Color::Blue;
     const sf::Color COLOR_SAND = sf::Color(194, 178, 128);
     const sf::Color COLOR_HUMAN = sf::Color::White;
     const sf::Color COLOR_TREE = sf::Color(34, 139, 34);
+    const sf::Color COLOR_FOREST = sf::Color(0, 90, 25);
     const sf::Color COLOR_FOOD = sf::Color::Green;
     const sf::Color COLOR_SELECTED_HUMAN = sf::Color::Black;
     const sf::Color COLOR_DEAD_BODY = sf::Color(120, 120, 120);
@@ -72,7 +79,7 @@ namespace Config
     constexpr int HUMAN_THIRST_DAMAGE_DIVISOR = 70;
     constexpr int HUMAN_AGE_DAMAGE_DIVISOR = 4000;
 
-    constexpr int HUMAN_VISION_RANGE = 8;
+    constexpr int HUMAN_VISION_RANGE = 15;
     constexpr VisionShape HUMAN_VISION_SHAPE = VisionShape::ForwardTriangle;
 
     constexpr int HUMAN_INVENTORY_SIZE = 5;

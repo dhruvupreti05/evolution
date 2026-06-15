@@ -8,6 +8,7 @@ enum class TileType
     Empty,
     Water,
     Sand,
+    Forest,
     Tree,
     Crop,
     Human,

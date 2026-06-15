@@ -6,6 +6,7 @@
 #include "entities/human.h"
 #include "entities/predator.h"
 #include "environment/daynight.h"
+#include "environment/forest.h"
 #include "environment/lake.h"
 #include "environment/weather.h"
 
@@ -19,6 +20,7 @@ Simulation::Simulation()
 void Simulation::init(GameWorld& world)
 {
     Lake::init(world);
+    Forest::init(world);
     Human::init(world);
     Predator::init(world);
     Weather::init();
@@ -138,6 +140,7 @@ void Simulation::drawWorld(GameWorld& world)
     world.clear();
 
     Lake::drawLakes(world);
+    Forest::drawForests(world);
     Crop::drawCrops(world);
 
     Human::drawBodies(world);

@@ -642,10 +642,9 @@ void HumanInspector::drawVision(const Human& human, const GameWorld& world)
     const float centerX = Config::INSPECTOR_WINDOW_WIDTH / 2.0f;
 
     const float humanDrawX = std::round(centerX - tileSize / 2.0f);
-    const float humanDrawY = (Config::HUMAN_VISION_SHAPE == VisionShape::ForwardTriangle) ? 250.0f : 160.0f;
+    const float humanDrawY = 250.0f;
 
-    
-    drawCenteredText("Human View", centerX, 40.0f, 22);
+    drawCenteredText("Human View", centerX, 55.0f, 22);
 
     std::vector<VisibleTile> visibleTiles = human.getVisibleTiles(world);
 

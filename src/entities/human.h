@@ -8,7 +8,6 @@
 #include "entities/entity.h"
 #include "entities/food.h"
 #include "entities/direction.h"
-#include "entities/visionshape.h"
 
 /*
     Direction the human is facing.
@@ -137,7 +136,8 @@ public:
     static Human* getAdjacentLivingHuman(int x, int y);
     static Human* getAdjacentEdibleBody(int x, int y);
     static Human* getNearestLivingHumanOrBody(int x, int y);
-    static Human* getNearestLivingHumanOrBodyWithinRange(int x, int y, int range);
+    static Human* getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int x, int y, int range);
+    static bool isHiddenFromPredators(const GameWorld& world, int x, int y);
 
     static int countAlive();
     static int countDead();

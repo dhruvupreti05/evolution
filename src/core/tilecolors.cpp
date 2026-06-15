@@ -16,6 +16,9 @@ sf::Color TileColors::get(TileType tile)
         case TileType::Sand:
             return Config::COLOR_SAND;
 
+        case TileType::Forest:
+            return Config::COLOR_FOREST;
+
         case TileType::Tree:
             return Config::COLOR_TREE;
 
