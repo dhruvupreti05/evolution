@@ -25,6 +25,9 @@ sf::Color TileColors::get(TileType tile)
         case TileType::Crop:
             return Config::COLOR_FOOD;
 
+        case TileType::Body:
+            return Config::COLOR_DEAD_BODY;
+
         case TileType::Human:
             return Config::COLOR_HUMAN;
 
@@ -36,7 +39,6 @@ sf::Color TileColors::get(TileType tile)
             return Config::COLOR_BACKGROUND;
     }
 }
-
 /*
     Returns the tile color after applying the current day/night brightness.
 */

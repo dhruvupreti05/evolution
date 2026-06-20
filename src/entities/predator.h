@@ -74,7 +74,7 @@ private:
     static bool findChildSpawnCell(GameWorld& world, const Predator& parentA, const Predator& parentB, PredatorType childType, int& childX, int& childY);
 
     void decayStats() override;
-    void checkDeath() override;
+    void checkDeath(GameWorld& world) override;
     void updateHealthFromNeeds();
 
     bool isLandPredator() const;

@@ -1,5 +1,6 @@
 #include "entities/predator.h"
 #include "core/config.h"
+#include "entities/body.h"
 #include "core/gridutils.h"
 #include "environment/lake.h"
 #include "environment/daynight.h"
@@ -143,7 +144,7 @@ void Predator::updatePredators(GameWorld& world)
         predator.tickMatingCooldown();
 
         predator.decayStats();
-        predator.checkDeath();
+        predator.checkDeath(world);
 
         if (predator.dead)
         {
@@ -520,9 +521,9 @@ void Predator::updateHealthFromNeeds()
 }
 
 /*
-    Marks the predator as dead only when health reaches zero.
+    Kills the predator if health reaches zero and creates a body on its tile.
 */
-void Predator::checkDeath()
+void Predator::checkDeath(GameWorld& world)
 {
     if (dead)
     {
@@ -532,7 +533,7 @@ void Predator::checkDeath()
     if (health <= 0)
     {
         dead = true;
-        deadBodyTicksRemaining = Config::TICKS_PER_DEAD_PREDATOR;
+        Body::addBodyAt(world, x, y, BodySource::Predator);
     }
 }
 
@@ -693,7 +694,7 @@ void Predator::killWaterPredatorsNotOnWater(GameWorld& world)
         if (missingWater)
         {
             predator.health = 0;
-            predator.checkDeath();
+            predator.checkDeath(world);
         }
     }
 }
@@ -765,7 +766,8 @@ bool Predator::tryMove(Direction direction, GameWorld& world)
 }
 
 /*
-    Tries to eat a human body from an adjacent tile.
+    Tries to eat a body from an adjacent tile.
+    Bodies are managed by Body, not by Human or Predator.
 */
 bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
@@ -774,21 +776,14 @@ bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    Human* body = Human::getAdjacentEdibleBody(x, y);
+    int hungerGain = 0;
 
-    if (body == nullptr)
+    if (!Body::eatBodyAt(world, targetX, targetY, hungerGain))
     {
         return false;
     }
 
-    if (body->getX() != targetX || body->getY() != targetY)
-    {
-        return false;
-    }
-
-    body->eatBodyOneTick();
-
-    increaseHunger(Config::HUNGER_PER_TICK_MEAL_HUMAN, Config::PREDATOR_MAX_HUNGER);
+    increaseHunger(hungerGain, Config::PREDATOR_MAX_HUNGER);
 
     return true;
 }
@@ -835,6 +830,6 @@ bool Predator::tryAttackAt(GameWorld& world, int targetX, int targetY)
         return false;
     }
 
-    human->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK);
+    human->takeDamage(Config::HEALTH_PER_PREDATOR_ATTACK, world);
     return true;
 }

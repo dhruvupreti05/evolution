@@ -1,4 +1,5 @@
 #include "human.h"
+#include "entities/body.h"
 #include "core/debuglog.h"
 #include "core/gridutils.h"
 #include "core/config.h"
@@ -79,52 +80,6 @@ void Human::update(GameWorld& world)
 }
 
 /*
-    Returns whether this dead human still has an edible body.
-*/
-bool Human::hasBody() const
-{
-    return isEdible();
-}
-
-/*
-    Returns whether this human's body can currently be eaten.
-*/
-bool Human::isBodyEdible() const
-{
-    return isEdible();
-}
-
-/*
-    Body claiming is currently disabled, so bodies are never marked as claimed.
-*/
-bool Human::isBodyClaimedThisTick() const
-{
-    return false;
-}
-
-/*
-    Placeholder for body-claiming logic.
-*/
-void Human::claimBodyForEating()
-{
-}
-
-/*
-    Placeholder for resetting body-claiming logic each tick.
-*/
-void Human::resetBodyEatingClaims()
-{
-}
-
-/*
-    Removes one eating tick from this human's dead body.
-*/
-void Human::eatBodyOneTick()
-{
-    eatOneTick();
-}
-
-/*
     Updates hunger, thirst, age, and the health effects caused by them.
     Hunger and thirst no longer kill directly; they only push health up or down.
 */
@@ -172,10 +127,9 @@ void Human::updateHealthFromNeedsAndAge()
 }
 
 /*
-    Marks the human as dead only when health reaches zero.
-    Hunger and thirst can cause health loss, but they are not death conditions anymore.
+    Kills the human if health reaches zero and creates a body on its tile.
 */
-void Human::checkDeath()
+void Human::checkDeath(GameWorld& world)
 {
     if (dead)
     {
@@ -185,8 +139,7 @@ void Human::checkDeath()
     if (health <= 0)
     {
         dead = true;
-        deadBodyTicksRemaining = Config::TICKS_PER_DEAD_BODY;
-        mealTicksRemaining = Config::TICKS_PER_MEAL_HUMAN;
+        Body::addBodyAt(world, x, y, BodySource::Human);
     }
 }
 
@@ -632,20 +585,6 @@ void Human::draw(GameWorld& world) const
 }
 
 /*
-    Draws all edible dead bodies.
-*/
-void Human::drawBodies(GameWorld& world)
-{
-    for (const auto& human : humans)
-    {
-        if (human.hasBody())
-        {
-            world.drawTile(human.getX(), human.getY(), Config::COLOR_DEAD_BODY);
-        }
-    }
-}
-
-/*
     Updates every human in phases.
     Mating is resolved between choosing actions and executing normal actions.
 */
@@ -667,7 +606,7 @@ void Human::updateHumans(GameWorld& world)
         human.tickMatingCooldown();
 
         human.decayStats();
-        human.checkDeath();
+        human.checkDeath(world);
 
         if (human.dead)
         {
@@ -1189,12 +1128,9 @@ bool Human::isBlockingEntityAt(int x, int y)
         }
     }
 
-    for (const Human& human : humans)
+    if (Body::isBodyAt(x, y))
     {
-        if (human.dead && human.hasBody() && human.x == x && human.y == y)
-        {
-            return true;
-        }
+        return true;
     }
 
     return false;
@@ -1237,58 +1173,6 @@ Human* Human::getAdjacentLivingHuman(int x, int y)
     }
 
     return nullptr;
-}
-
-/*
-    Finds an edible dead body directly next to a position.
-*/
-Human* Human::getAdjacentEdibleBody(int x, int y)
-{
-    for (auto& human : humans)
-    {
-        if (!human.isBodyEdible())
-        {
-            continue;
-        }
-
-        if (GridUtils::isFourNeighborDistance(x, y, human.getX(), human.getY()))
-        {
-            return &human;
-        }
-    }
-
-    return nullptr;
-}
-
-/*
-    Finds the nearest living human or edible body with no range limit.
-*/
-Human* Human::getNearestLivingHumanOrBody(int x, int y)
-{
-    Human* nearest = nullptr;
-    int bestDistance = 0;
-
-    for (auto& human : humans)
-    {
-        bool validTarget = !human.isDead() || human.isBodyEdible();
-
-        if (!validTarget)
-        {
-            continue;
-        }
-
-        int dx = std::abs(human.getX() - x);
-        int dy = std::abs(human.getY() - y);
-        int distance = dx + dy;
-
-        if (nearest == nullptr || distance < bestDistance)
-        {
-            nearest = &human;
-            bestDistance = distance;
-        }
-    }
-
-    return nearest;
 }
 
 /*
@@ -1594,8 +1478,8 @@ void Human::resolveMatingActions(GameWorld& world)
 
             if (mother != nullptr)
             {
-                mother->takeDamage(Config::HUMAN_FEMALE_MATING_HEALTH_COST);
-                mother->checkDeath();
+                mother->takeDamage(Config::HUMAN_FEMALE_MATING_HEALTH_COST, world);
+                mother->checkDeath(world);
             }
 
             if (parentAAfterBirth != nullptr)
@@ -1645,10 +1529,10 @@ bool Human::isHiddenFromPredators(const GameWorld& world, int x, int y)
 }
 
 /*
-    Finds the nearest living human or edible body within a limited range.
-    Forest targets are ignored unless the predator has already stumbled next to them.
+    Finds the nearest living human within a limited range.
+    Humans hidden in forests are ignored unless the predator is directly next to them.
 */
-Human* Human::getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int x, int y, int range)
+Human* Human::getNearestLivingHumanWithinRange(const GameWorld& world, int x, int y, int range)
 {
     if (range <= 0)
     {
@@ -1664,26 +1548,19 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int
         {
             for (int dx = -range; dx <= range; ++dx)
             {
+                int targetX = x + dx;
+                int targetY = y + dy;
+
                 int distance = std::abs(dx) + std::abs(dy);
 
-                if (distance == 0 || distance > range)
+                if (distance == 0 || distance > range || distance >= bestDistance)
                 {
                     continue;
                 }
 
-                if (distance >= bestDistance)
-                {
-                    continue;
-                }
+                Human* human = EntityOccupancy::getHumanAt(targetX, targetY);
 
-                Human* human = EntityOccupancy::getHumanAt(x + dx, y + dy);
-
-                if (human == nullptr)
-                {
-                    continue;
-                }
-
-                if (human->isDead())
+                if (human == nullptr || human->isDead())
                 {
                     continue;
                 }
@@ -1697,55 +1574,31 @@ Human* Human::getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int
                 bestDistance = distance;
             }
         }
-    }
-    else
-    {
-        for (Human& human : humans)
-        {
-            if (human.dead)
-            {
-                continue;
-            }
 
-            int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
-
-            if (isHiddenFromPredators(world, human.x, human.y) && !GridUtils::isFourNeighborDistance(x, y, human.x, human.y))
-            {
-                continue;
-            }
-
-            if (distance <= range && distance < bestDistance)
-            {
-                bestHuman = &human;
-                bestDistance = distance;
-            }
-        }
+        return bestHuman;
     }
 
     for (Human& human : humans)
     {
-        if (!human.hasBody())
-        {
-            continue;
-        }
-
-        if (!human.isBodyEdible())
+        if (human.dead)
         {
             continue;
         }
 
         int distance = GridUtils::manhattanDistance(x, y, human.x, human.y);
 
+        if (distance == 0 || distance > range || distance >= bestDistance)
+        {
+            continue;
+        }
+
         if (isHiddenFromPredators(world, human.x, human.y) && !GridUtils::isFourNeighborDistance(x, y, human.x, human.y))
         {
             continue;
         }
 
-        if (distance <= range && distance < bestDistance)
-        {
-            bestHuman = &human;
-            bestDistance = distance;
-        }
+        bestHuman = &human;
+        bestDistance = distance;
     }
 
     return bestHuman;

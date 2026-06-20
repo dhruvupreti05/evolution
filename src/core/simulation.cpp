@@ -4,6 +4,7 @@
 #include "entities/crop.h"
 #include "entities/entityoccupancy.h"
 #include "entities/human.h"
+#include "entities/body.h"
 #include "entities/predator.h"
 #include "environment/daynight.h"
 #include "environment/forest.h"
@@ -95,7 +96,7 @@ void Simulation::update(GameWorld& world)
     }
 
     DayNight::update();
-    Human::resetBodyEatingClaims();
+    Body::resetEatingClaims();
 
     EntityOccupancy::rebuild(world);
 
@@ -107,6 +108,7 @@ void Simulation::update(GameWorld& world)
 
     Crop::update(world);
     Weather::update(world);
+    Body::update(world);
 
     // Final rebuild keeps occupancy correct for drawing, inspectors, and the next frame.
     EntityOccupancy::rebuild(world);
@@ -143,8 +145,7 @@ void Simulation::drawWorld(GameWorld& world)
     Forest::drawForests(world);
     Crop::drawCrops(world);
 
-    Human::drawBodies(world);
-    Predator::drawBodies(world);
+    Body::drawBodies(world);
 
     Human::drawHumans(world);
     Predator::drawPredators(world);

@@ -1,5 +1,6 @@
 #include "core/gameworld.h"
 #include "environment/daynight.h"
+#include "entities/body.h"
 #include "core/config.h"
 #include "core/tilecolors.h"
 
@@ -53,6 +54,12 @@ void GameWorld::setTile(int x, int y, TileType type)
 {
     if (!isInsideGrid(x, y))
     {
+        return;
+    }
+
+    if (tiles[y][x] == TileType::Body && type != TileType::Body && Body::isBodyAt(x, y))
+    {
+        Body::setTileUnderBodyAt(x, y, type);
         return;
     }
 

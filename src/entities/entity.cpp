@@ -1,5 +1,5 @@
 #include "entities/entity.h"
-
+#include "core/gameworld.h"
 #include "brain/brain.h"
 
 #include <utility>
@@ -37,7 +37,7 @@ void Entity::prepareAction(GameWorld& world)
     }
 
     decayStats();
-    checkDeath();
+    checkDeath(world);
 
     if (dead || brain == nullptr)
     {
@@ -170,7 +170,7 @@ Brain* Entity::getBrain()
 /*
     Reduces health and checks whether the damage killed the entity.
 */
-void Entity::takeDamage(int amount)
+void Entity::takeDamage(int amount, GameWorld& world)
 {
     if (dead)
     {
@@ -184,7 +184,7 @@ void Entity::takeDamage(int amount)
         health = 0;
     }
 
-    checkDeath();
+    checkDeath(world);
 }
 
 /*

@@ -122,21 +122,9 @@ public:
 
     static bool isHumanAt(int x, int y);
 
-    bool hasBody() const;
-    bool isBodyEdible() const;
-    bool isBodyClaimedThisTick() const;
-
-    void claimBodyForEating();
-    void eatBodyOneTick();
-
-    static void drawBodies(GameWorld& world);
-    static void resetBodyEatingClaims();
-
     static bool isBlockingEntityAt(int x, int y);
     static Human* getAdjacentLivingHuman(int x, int y);
-    static Human* getAdjacentEdibleBody(int x, int y);
-    static Human* getNearestLivingHumanOrBody(int x, int y);
-    static Human* getNearestLivingHumanOrBodyWithinRange(const GameWorld& world, int x, int y, int range);
+    static Human* getNearestLivingHumanWithinRange(const GameWorld& world, int x, int y, int range);
     static bool isHiddenFromPredators(const GameWorld& world, int x, int y);
 
     static int countAlive();
@@ -174,7 +162,7 @@ private:
     void move(Direction direction, GameWorld& world);
 
     void decayStats() override;
-    void checkDeath() override;
+    void checkDeath(GameWorld& world) override;
     void updateHealthFromNeedsAndAge();
 
     static bool findChildSpawnCell(GameWorld& world, const Human& parentA, const Human& parentB, int& childX, int& childY);

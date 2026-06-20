@@ -41,7 +41,7 @@ public:
     void setBrain(std::unique_ptr<Brain> newBrain);
     Brain* getBrain();
 
-    virtual void takeDamage(int amount);
+    void takeDamage(int amount, GameWorld& world);
     void increaseHunger(int amount, int maxHunger);
     void increaseThirst(int amount, int maxThirst);
 
@@ -79,7 +79,7 @@ protected:
     int hunger;
 
     virtual void decayStats() = 0;
-    virtual void checkDeath() = 0;
+    virtual void checkDeath(GameWorld& world) = 0;
 
     bool dead = false;
 

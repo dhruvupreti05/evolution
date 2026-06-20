@@ -5,6 +5,7 @@
 #include "entities/human.h"
 #include "entities/crop.h"
 #include "core/config.h"
+#include "entities/body.h"
 #include "core/gridutils.h"
 #include "environment/lake.h"
 
@@ -82,13 +83,12 @@ Action PredatorSmartBrain::chooseThirstAction(Entity& entity, GameWorld& world)
 }
 
 /*
-    Chooses what the predator should do when it is not urgently thirsty.
-    Dead bodies are eaten first, nearby living humans are attacked,
-    and farther targets are chased.
+    Chooses predator hunger behavior.
+    Predators eat adjacent bodies first, attack adjacent living humans second, then move toward the nearest body or living human.
 */
 Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
 {
-    Human* body = Human::getAdjacentEdibleBody(entity.getX(), entity.getY());
+    Body* body = Body::getAdjacentEdibleBody(entity.getX(), entity.getY());
 
     if (body != nullptr)
     {
@@ -102,12 +102,19 @@ Action PredatorSmartBrain::chooseHungerAction(Entity& entity, GameWorld& world)
         return Action::attack(livingHuman->getX(), livingHuman->getY());
     }
 
-    Human* target = Human::getNearestLivingHumanOrBodyWithinRange(world, entity.getX(), entity.getY(), Config::PREDATOR_PREY_SEARCH_RANGE);
+    Body* bodyTarget = Body::getNearestBodyWithinRange(world, entity.getX(), entity.getY(), Config::PREDATOR_PREY_SEARCH_RANGE);
 
-    if (target == nullptr)
+    if (bodyTarget != nullptr)
+    {
+        return Action::move(GridUtils::directionToward(entity.getX(), entity.getY(), bodyTarget->getX(), bodyTarget->getY()));
+    }
+
+    Human* humanTarget = Human::getNearestLivingHumanWithinRange(world, entity.getX(), entity.getY(), Config::PREDATOR_PREY_SEARCH_RANGE);
+
+    if (humanTarget == nullptr)
     {
         return Action::move(GridUtils::randomDirection());
     }
 
-    return Action::move(GridUtils::directionToward(entity.getX(), entity.getY(), target->getX(), target->getY()));
+    return Action::move(GridUtils::directionToward(entity.getX(), entity.getY(), humanTarget->getX(), humanTarget->getY()));
 }
