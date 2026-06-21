@@ -168,6 +168,14 @@ Brain* Entity::getBrain()
 }
 
 /*
+    Returns the brain currently controlling this entity; const version for read-only checks.
+*/
+const Brain* Entity::getBrain() const
+{
+    return brain.get();
+}
+
+/*
     Reduces health and checks whether the damage killed the entity.
 */
 void Entity::takeDamage(int amount, GameWorld& world)

@@ -14,6 +14,7 @@
 #include <memory>
 #include <cmath>
 #include <set>
+#include <string>
 #include <algorithm>
 
 std::vector<Predator> Predator::predators;
@@ -166,6 +167,13 @@ void Predator::updatePredators(GameWorld& world)
 
         if (predator.hasPreparedAction() && predator.getPreparedAction().type != ActionType::Mate)
         {
+            Action action = predator.getPreparedAction();
+
+            if (action.type != ActionType::Move && action.type != ActionType::Stay)
+            {
+                DebugLog::action("Predator", predator.getId(), action);
+            }
+
             predator.executePreparedAction(world);
         }
         else
@@ -533,6 +541,9 @@ void Predator::checkDeath(GameWorld& world)
     if (health <= 0)
     {
         dead = true;
+
+        DebugLog::death("Predator", id, "health reached zero");
+
         Body::addBodyAt(world, x, y, BodySource::Predator);
     }
 }
@@ -784,6 +795,8 @@ bool Predator::tryEatAt(GameWorld& world, int targetX, int targetY)
     }
 
     increaseHunger(hungerGain, Config::PREDATOR_MAX_HUNGER);
+
+    DebugLog::message("Predator " + std::to_string(id) + " ate body at (" + std::to_string(targetX) + ", " + std::to_string(targetY) + ")");
 
     return true;
 }

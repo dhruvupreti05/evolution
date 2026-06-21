@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e 
+
 START_DIR=$(pwd)
 OUTPUT_FILE="$START_DIR/srcout.txt"
 
@@ -21,4 +23,4 @@ find src -type f \( -name "*.cpp" -o -name "*.h" \) | while read -r file; do
     echo -e "\n\n" >> "$OUTPUT_FILE"
 done
 
-echo "Done! All source files have been combined into $OUTPUT_FILE."
+echo "All source files have been combined into $OUTPUT_FILE."

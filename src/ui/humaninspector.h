@@ -52,6 +52,7 @@ private:
     void pickUpItem();
     void dropItem();
 
+    void toggleManualMode();
     void drawPanelBackground();
     void drawVision(const Human& human, const GameWorld& world);
     void drawInventory(const Human& human);

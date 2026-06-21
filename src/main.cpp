@@ -43,7 +43,7 @@ int main()
             sf::sleep(targetTickTime - elapsed);
         }
 
-        std::cout << "Tick work time: " << elapsed.asMilliseconds() << " ms" << std::endl;
+        // std::cout << "Tick work time: " << elapsed.asMilliseconds() << " ms" << std::endl;
     }
 
     return 0;

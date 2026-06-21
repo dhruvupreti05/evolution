@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 
 std::vector<Lake> Lake::lakes;
@@ -347,13 +348,14 @@ bool Lake::placeWaterAt(GameWorld& world, int x, int y)
 }
 
 /*
-    Expands this lake outward by one layer.
+    Expands this lake unevenly by adding only some boundary neighbors.
+    This avoids square-looking lakes caused by expanding every edge cell at once.
 */
 void Lake::floodOneLayer()
 {
     std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-    std::set<GridPos> newWaterCells;
+    std::vector<GridPos> candidates;
 
     for (const auto& waterCell : cells)
     {
@@ -371,26 +373,37 @@ void Lake::floodOneLayer()
                 continue;
             }
 
-            newWaterCells.insert(neighbor);
+            candidates.push_back(neighbor);
         }
     }
 
-    for (const auto& cell : newWaterCells)
+    if (candidates.empty())
     {
-        cells.insert(cell);
+        return;
+    }
+
+    int percent = Config::FLOOD_EDGE_CHANGE_PERCENT;
+
+    for (const auto& cell : candidates)
+    {
+        if (rand() % 100 < percent)
+        {
+            cells.insert(cell);
+        }
     }
 
     regenerateSandBoundary();
 }
 
 /*
-    Removes the outer layer of this lake.
+    Shrinks this lake unevenly by removing only some outer water cells.
+    This keeps drought edges irregular instead of carving away a perfect layer.
 */
 void Lake::dryOneLayer()
 {
     std::vector<GridPos> directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-    std::set<GridPos> cellsToRemove;
+    std::vector<GridPos> candidates;
 
     for (const auto& waterCell : cells)
     {
@@ -415,13 +428,23 @@ void Lake::dryOneLayer()
 
         if (isOuterWaterCell)
         {
-            cellsToRemove.insert(waterCell);
+            candidates.push_back(waterCell);
         }
     }
 
-    for (const auto& cell : cellsToRemove)
+    if (candidates.empty())
     {
-        cells.erase(cell);
+        return;
+    }
+
+    int percent = Config::DROUGHT_EDGE_CHANGE_PERCENT;
+
+    for (const auto& cell : candidates)
+    {
+        if (rand() % 100 < percent)
+        {
+            cells.erase(cell);
+        }
     }
 
     regenerateSandBoundary();

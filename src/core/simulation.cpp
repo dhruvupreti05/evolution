@@ -28,7 +28,7 @@ void Simulation::init(GameWorld& world)
 
     EntityOccupancy::rebuild(world);
 
-    DebugLog::setEnabled(false);
+    DebugLog::setEnabled(true);
 }
 
 /*

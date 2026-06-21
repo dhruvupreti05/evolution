@@ -2,3 +2,4 @@ evolution
 build/
 .*
 srcout.txt
+debug.log

@@ -10,6 +10,7 @@
 #include "brain/manual-brain.h"
 #include "brain/random-brain.h"
 #include "entities/action.h"
+#include "brain/human-smart-brain.h"
 #include "entities/entityoccupancy.h"
 
 #include <cstdlib>
@@ -36,7 +37,7 @@ static bool targetsEntity(const Action& action, const Human& human)
 */
 Human::Human(int gridX, int gridY) : Entity(gridX, gridY, Config::HUMAN_START_HEALTH + (rand() % (2 * Config::HUMAN_START_HEALTH_BUFFER + 1) - Config::HUMAN_START_HEALTH_BUFFER), Config::HUMAN_START_THIRST + (rand() % (2 * Config::HUMAN_START_THIRST_BUFFER + 1) - Config::HUMAN_START_THIRST_BUFFER), Config::HUMAN_START_HUNGER + (rand() % (2 * Config::HUMAN_START_HUNGER_BUFFER + 1) - Config::HUMAN_START_HUNGER_BUFFER)), Food(Config::TICKS_PER_MEAL_HUMAN, Config::HUNGER_PER_TICK_MEAL_HUMAN), age(0), gender((rand() % 2 == 0) ? Gender::Male : Gender::Female), id(nextId++)
 {
-    setRandomBrain();
+    setSmartBrain();
 }
 
 /*
@@ -139,6 +140,9 @@ void Human::checkDeath(GameWorld& world)
     if (health <= 0)
     {
         dead = true;
+
+        DebugLog::death("Human", id, "health reached zero");
+
         Body::addBodyAt(world, x, y, BodySource::Human);
     }
 }
@@ -628,6 +632,13 @@ void Human::updateHumans(GameWorld& world)
 
         if (human.hasPreparedAction() && human.getPreparedAction().type != ActionType::Mate)
         {
+            Action action = human.getPreparedAction();
+
+            if (action.type != ActionType::Move && action.type != ActionType::Stay)
+            {
+                DebugLog::action("Human", human.getId(), action);
+            }
+
             human.executePreparedAction(world);
         }
         else
@@ -1223,9 +1234,15 @@ bool Human::tryMove(Direction direction, GameWorld& world)
 
 /*
     Tries to eat a crop from an adjacent tile.
+    If the human targets its own tile, it tries to eat a carried crop from inventory.
 */
 bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
 {
+    if (targetX == x && targetY == y)
+    {
+        return eatCropFromInventory();
+    }
+
     if (!GridUtils::isFourNeighborDistance(x, y, targetX, targetY))
     {
         return false;
@@ -1244,6 +1261,7 @@ bool Human::tryEatAt(GameWorld& world, int targetX, int targetY)
     }
 
     increaseHunger(hungerGain, Config::HUMAN_MAX_HUNGER);
+
     return true;
 }
 
@@ -1602,4 +1620,66 @@ Human* Human::getNearestLivingHumanWithinRange(const GameWorld& world, int x, in
     }
 
     return bestHuman;
+}
+
+/*
+    Gives the human a smart survival brain.
+*/
+void Human::setSmartBrain()
+{
+    setBrain(std::make_unique<HumanSmartBrain>());
+}
+
+/*
+    Returns whether this human is currently manual-controlled.
+*/
+bool Human::isManualBrain() const
+{
+    return dynamic_cast<const ManualBrain*>(getBrain()) != nullptr;
+}
+
+/*
+    Returns whether this human is currently using the smart human brain.
+*/
+bool Human::isSmartBrain() const
+{
+    return dynamic_cast<const HumanSmartBrain*>(getBrain()) != nullptr;
+}
+
+/*
+    Returns whether the human is carrying at least one crop.
+*/
+bool Human::hasCropInInventory() const
+{
+    for (TileType item : inventory)
+    {
+        if (item == TileType::Crop)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+    Eats one crop from inventory.
+*/
+bool Human::eatCropFromInventory()
+{
+    for (int i = 0; i < static_cast<int>(inventory.size()); ++i)
+    {
+        if (inventory[i] != TileType::Crop)
+        {
+            continue;
+        }
+
+        inventory.erase(inventory.begin() + i);
+
+        increaseHunger(Config::HUNGER_PER_TICK_MEAL_CROP * Config::TICKS_PER_MEAL_CROP, Config::HUMAN_MAX_HUNGER);
+
+        return true;
+    }
+
+    return false;
 }

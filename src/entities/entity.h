@@ -40,6 +40,7 @@ public:
 
     void setBrain(std::unique_ptr<Brain> newBrain);
     Brain* getBrain();
+    const Brain* getBrain() const;
 
     void takeDamage(int amount, GameWorld& world);
     void increaseHunger(int amount, int maxHunger);

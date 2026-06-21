@@ -17,11 +17,11 @@ namespace Config
 
     // Simulation settings
     constexpr int NUM_PLAYERS = 150;
-    constexpr int NUM_LAKES = 10;
-    constexpr int NUM_FORESTS = 15;
+    constexpr int NUM_LAKES = 8;
+    constexpr int NUM_FORESTS = 12;
 
     // Time settings
-    constexpr int TICK_MS = 250;
+    constexpr int TICK_MS = 10;
 
     // Lake settings
     constexpr int MIN_LAKE_BLOCKS = 250;
@@ -97,8 +97,12 @@ namespace Config
     constexpr int FOOD_SPAWN_CHANCE_PERCENT = 50;
 
     // Day/night settings
-    constexpr int TICKS_PER_DAY = 300;
+    constexpr int TICKS_PER_DAY = 150;
     constexpr int MIDNIGHT_RGB_DECREASE = 100;
+
+    // Uneven flood/drought settings
+    constexpr int FLOOD_EDGE_CHANGE_PERCENT = 45;
+    constexpr int DROUGHT_EDGE_CHANGE_PERCENT = 45;
 
     // Body settings
     constexpr int TICKS_PER_DEAD_BODY = 300;
@@ -106,8 +110,8 @@ namespace Config
 
     // Predator settings
 
-    constexpr int PREDATOR_WATER_SEARCH_RANGE = 20;
-    constexpr int PREDATOR_PREY_SEARCH_RANGE = 25;
+    constexpr int PREDATOR_WATER_SEARCH_RANGE = 25;
+    constexpr int PREDATOR_PREY_SEARCH_RANGE = PREDATOR_WATER_SEARCH_RANGE;
 
     constexpr int NUMBER_OF_LAND_PREDATORS = 15;
     constexpr int NUMBER_OF_WATER_PREDATORS = NUMBER_OF_LAND_PREDATORS;
@@ -163,5 +167,12 @@ namespace Config
     constexpr int HUMAN_MATING_COOLDOWN_TICKS = 20;
     constexpr int PREDATOR_MATING_COOLDOWN_TICKS = 30;
     constexpr int HUMAN_FEMALE_MATING_HEALTH_COST = 150;
+
+    // Human smart brain settings
+    constexpr int HUMAN_THIRST_MODE_THRESHOLD = 500;
+    constexpr int HUMAN_CRITICAL_THIRST_MODE_THRESHOLD = 200;
+    constexpr int HUMAN_FOOD_SEARCH_RANGE = 25;
+    constexpr int HUMAN_WATER_SEARCH_RANGE = HUMAN_FOOD_SEARCH_RANGE;
+    constexpr int HUMAN_PREDATOR_DETECTION_RANGE = 12;
 
 }

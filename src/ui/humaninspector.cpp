@@ -193,7 +193,7 @@ bool HumanInspector::isOpen() const
 }
 
 /*
-    Gives every living human a random brain again.
+    Gives every living human a smart brain again.
 */
 void HumanInspector::resetAllHumanBrains()
 {
@@ -203,7 +203,7 @@ void HumanInspector::resetAllHumanBrains()
     {
         if (!human.isDead())
         {
-            human.setRandomBrain();
+            human.setSmartBrain();
         }
     }
 }
@@ -236,7 +236,7 @@ Human* HumanInspector::getSelectedHuman()
 
 /*
     Makes the selected human the inspected human.
-    Only the inspected human gets manual brain control.
+    Opening the inspector does not automatically switch the human to manual mode.
 */
 void HumanInspector::updateInspectedHumanId()
 {
@@ -263,7 +263,6 @@ void HumanInspector::updateInspectedHumanId()
         return;
     }
 
-    selectedHuman->setManualBrain();
     Human::setInspectedHumanId(selectedHuman->getId());
 }
 
@@ -342,7 +341,7 @@ void HumanInspector::moveSelectedHuman(Direction direction)
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -357,7 +356,7 @@ void HumanInspector::eatFacingTile()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -377,7 +376,7 @@ void HumanInspector::drinkFacingTile()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -397,7 +396,7 @@ void HumanInspector::attackFacingTile()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -456,6 +455,10 @@ void HumanInspector::handleEvents(GameWorld& world)
         else if (event.key.code == sf::Keyboard::W)
         {
             moveSelectedHuman(Direction::Up);
+        }
+        else if (event.key.code == sf::Keyboard::B)
+        {
+            toggleManualMode();
         }
         else if (event.key.code == sf::Keyboard::A)
         {
@@ -785,7 +788,7 @@ void HumanInspector::pickUpItem()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -800,7 +803,7 @@ void HumanInspector::dropItem()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -815,7 +818,7 @@ void HumanInspector::mateFacingEntity()
 {
     Human* human = getSelectedHuman();
 
-    if (human == nullptr)
+    if (human == nullptr || !human->isManualBrain())
     {
         return;
     }
@@ -850,5 +853,27 @@ void HumanInspector::mateFacingEntity()
 
             return;
         }
+    }
+}
+
+/*
+    Toggles the selected human between smart brain and manual brain.
+*/
+void HumanInspector::toggleManualMode()
+{
+    Human* human = getSelectedHuman();
+
+    if (human == nullptr || !human->isManualBrain())
+    {
+        return;
+    }
+
+    if (human->isManualBrain())
+    {
+        human->setSmartBrain();
+    }
+    else
+    {
+        human->setManualBrain();
     }
 }

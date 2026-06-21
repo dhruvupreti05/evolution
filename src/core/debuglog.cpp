@@ -5,7 +5,7 @@
 namespace
 {
     // File-only switch that controls whether debug messages are printed.
-    bool debugEnabled = false;
+    bool debugEnabled = true;
 }
 
 /*

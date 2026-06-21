@@ -137,6 +137,14 @@ public:
 
     bool canMateWith(const Human& other) const;
 
+    void setSmartBrain();
+
+    bool isManualBrain() const;
+    bool isSmartBrain() const;
+
+    bool hasCropInInventory() const;
+    bool eatCropFromInventory();
+
 private:
     // Counts how many eating ticks are left on this human's dead body.
     int deadBodyTicksRemaining = 0;
